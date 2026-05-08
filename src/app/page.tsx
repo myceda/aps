@@ -1,0 +1,23 @@
+import { AuthButtons } from "@/components/shared/AuthButtons";
+
+export const dynamic = "force-dynamic";
+
+export default function HomePage() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-10">
+      <section className="w-full max-w-xl rounded-lg border border-line bg-white p-8 shadow-sm">
+        <p className="text-sm font-semibold text-teal">Academic Planning Support</p>
+        <h1 className="mt-3 text-3xl font-bold leading-tight text-ink">
+          ระบบวิเคราะห์ผลการเรียนเทียบหลักสูตร
+        </h1>
+        <p className="mt-4 text-base leading-7 text-slate-600">
+          กรุณาเข้าสู่ระบบด้วย Google Account ของมหาวิทยาลัยก่อนใช้งาน
+          นักศึกษาใช้บัญชี @silpakorn.edu หรือ @su.ac.th ส่วนผู้ดูแลระบบใช้บัญชีที่กำหนดไว้ในระบบ
+        </p>
+        <div className="mt-7">
+          <AuthButtons />
+        </div>
+      </section>
+    </main>
+  );
+}

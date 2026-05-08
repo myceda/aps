@@ -1,0 +1,62 @@
+"use client";
+
+import { useState } from "react";
+
+export function CurriculumSetup({
+  initialProgramCode,
+  initialStudentCode,
+  initialTrack
+}: {
+  initialProgramCode?: string;
+  initialStudentCode?: string;
+  initialTrack?: string;
+}) {
+  const [programCode, setProgramCode] = useState(initialProgramCode ?? "CS2565");
+  const [studentCode, setStudentCode] = useState(initialStudentCode ?? "");
+  const [track, setTrack] = useState(initialTrack ?? "research");
+  const [message, setMessage] = useState("");
+
+  async function save() {
+    const response = await fetch("/api/student-program", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ programCode, studentCode, track })
+    });
+    const data = await response.json();
+    setMessage(data.success ? "บันทึกหลักสูตรแล้ว กำลังโหลดข้อมูลใหม่" : data.error ?? "บันทึกไม่สำเร็จ");
+    if (data.success) window.location.reload();
+  }
+
+  return (
+    <section className="surface p-4">
+      <h2 className="text-lg font-bold">ตั้งค่าหลักสูตรครั้งแรก</h2>
+      <p className="mt-1 text-sm text-slate-600">เลือกหลักสูตร ปีหลักสูตร และแผนการเรียนเพื่อให้ระบบวิเคราะห์ transcript ได้ตรงเงื่อนไข</p>
+      <div className="mt-4 grid gap-3 md:grid-cols-4">
+        <label className="text-sm font-semibold">
+          หลักสูตร
+          <select className="mt-2 w-full rounded-md border border-line px-3 py-2" value={programCode} onChange={(event) => setProgramCode(event.target.value)}>
+            <option value="CS2565">CS2565 วิทยาการคอมพิวเตอร์</option>
+            <option value="IT2565">IT2565 เทคโนโลยีสารสนเทศ</option>
+          </select>
+        </label>
+        <label className="text-sm font-semibold">
+          รหัสนักศึกษา
+          <input className="mt-2 w-full rounded-md border border-line px-3 py-2" value={studentCode} onChange={(event) => setStudentCode(event.target.value)} placeholder="650710xxx" />
+        </label>
+        <label className="text-sm font-semibold">
+          แผน
+          <select className="mt-2 w-full rounded-md border border-line px-3 py-2" value={track} onChange={(event) => setTrack(event.target.value)}>
+            <option value="research">โครงงานวิจัย</option>
+            <option value="coop">สหกิจศึกษา</option>
+          </select>
+        </label>
+        <div className="flex items-end">
+          <button className="w-full rounded-md bg-teal px-4 py-2 text-sm font-semibold text-white" onClick={save}>
+            บันทึก
+          </button>
+        </div>
+      </div>
+      {message ? <p className="mt-3 rounded-md border border-line bg-mist p-3 text-sm">{message}</p> : null}
+    </section>
+  );
+}

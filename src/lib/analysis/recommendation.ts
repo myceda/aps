@@ -1,0 +1,34 @@
+import type { AnalysisResult, Recommendation } from "@/lib/types";
+
+export function buildRecommendations(result: Omit<AnalysisResult, "recommendations">): Recommendation[] {
+  const recommendations: Recommendation[] = [];
+
+  for (const impact of result.prerequisiteImpacts) {
+    recommendations.push({
+      message: impact.recommendation,
+      reason: `${impact.failedPrereqCode} เคยได้ F/W และเป็น prerequisite ของ ${impact.blockedCourseCode}`,
+      priority: impact.hasSummerOffering ? 1 : 2
+    });
+  }
+
+  const missingRequired = result.courseStatuses.filter(
+    (course) => course.category === "วิชาบังคับ" && course.status !== "passed"
+  );
+  if (missingRequired.length > 0) {
+    recommendations.push({
+      message: `จัดลำดับลงวิชาบังคับที่ยังไม่ผ่าน ${missingRequired.slice(0, 3).map((course) => course.courseCode).join(", ")}`,
+      reason: "วิชาบังคับเป็นเงื่อนไขหลักของการจบการศึกษา",
+      priority: 2
+    });
+  }
+
+  if (result.gpax < 3.25) {
+    recommendations.push({
+      message: "ใช้ GPAX simulator เพื่อดูเกรดเฉลี่ยที่ควรทำในเทอมถัดไป",
+      reason: "GPAX ปัจจุบันยังต่ำกว่าเกณฑ์เกียรตินิยมอันดับสอง",
+      priority: 3
+    });
+  }
+
+  return recommendations.sort((a, b) => a.priority - b.priority);
+}

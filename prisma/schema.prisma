@@ -1,0 +1,260 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+}
+
+enum ParseStatus {
+  PENDING
+  NEEDS_REVIEW
+  CONFIRMED
+  FAILED
+}
+
+enum PlanTrack {
+  RESEARCH
+  COOP
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  googleId  String?  @unique
+  email     String   @unique
+  name      String
+  role      UserRole @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  studentPrograms StudentProgram[]
+  uploads         TranscriptUpload[]
+  grades          StudentGrade[]
+  semesterSummaries TranscriptSemesterSummary[]
+  analysisResults AnalysisResult[]
+  simulations     SimulationSession[]
+}
+
+model Program {
+  id                 Int      @id @default(autoincrement())
+  code               String   @unique
+  nameTh             String
+  nameEn             String
+  academicYear       Int
+  totalCreditsMin    Int
+  honorFirstClassMin Decimal  @db.Decimal(3, 2)
+  honorSecondClassMin Decimal @db.Decimal(3, 2)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  courses         Course[]
+  structures      ProgramStructure[]
+  studyPlans      StudyPlan[]
+  studentPrograms StudentProgram[]
+  rules           Rule[]
+}
+
+model Course {
+  id        Int      @id @default(autoincrement())
+  programId Int?
+  code      String
+  nameTh    String
+  nameEn    String?
+  credits   Int
+  category  String
+  groupName String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  program           Program?       @relation(fields: [programId], references: [id])
+  prerequisites     Prerequisite[] @relation("CoursePrereqTarget")
+  requiredFor       Prerequisite[] @relation("CoursePrereqSource")
+  studyPlans        StudyPlan[]
+  offerings         CourseOffering[]
+  studentGrades     StudentGrade[]
+  simulationCourses SimulationCourse[]
+
+  @@unique([programId, code])
+}
+
+model ProgramStructure {
+  id          Int    @id @default(autoincrement())
+  programId   Int
+  category    String
+  minCredits  Int
+  description String?
+
+  program Program @relation(fields: [programId], references: [id])
+}
+
+model Prerequisite {
+  id               Int     @id @default(autoincrement())
+  courseId         Int
+  prereqCourseId   Int
+  isCorequisite    Boolean @default(false)
+  conditionNote    String?
+
+  course       Course @relation("CoursePrereqTarget", fields: [courseId], references: [id])
+  prereqCourse Course @relation("CoursePrereqSource", fields: [prereqCourseId], references: [id])
+
+  @@unique([courseId, prereqCourseId])
+}
+
+model StudyPlan {
+  id           Int       @id @default(autoincrement())
+  programId    Int
+  courseId     Int?
+  yearLevel    Int
+  semester     Int
+  track        PlanTrack?
+  placeholder  String?
+  credits      Int
+
+  program Program @relation(fields: [programId], references: [id])
+  course  Course? @relation(fields: [courseId], references: [id])
+}
+
+model GradeMapping {
+  gradeChar  String  @id
+  gradePoint Decimal @db.Decimal(3, 2)
+  isPassing  Boolean
+  isAttempt  Boolean
+  isCredit   Boolean
+}
+
+model StudentProgram {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  programId   Int
+  studentCode String
+  track       PlanTrack @default(RESEARCH)
+  createdAt   DateTime  @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  program Program @relation(fields: [programId], references: [id])
+}
+
+model TranscriptUpload {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  fileName    String
+  parseStatus ParseStatus @default(PENDING)
+  warningText String?
+  createdAt   DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  grades StudentGrade[]
+  semesterSummaries TranscriptSemesterSummary[]
+}
+
+model StudentGrade {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  uploadId     Int?
+  courseId     Int?
+  courseCode   String
+  courseName   String
+  credits      Int
+  gradeChar    String
+  semester     Int
+  academicYear Int
+  sourceRow    String?
+  createdAt    DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id])
+  upload TranscriptUpload? @relation(fields: [uploadId], references: [id])
+  course Course? @relation(fields: [courseId], references: [id])
+}
+
+model TranscriptSemesterSummary {
+  id           Int     @id @default(autoincrement())
+  userId       Int
+  uploadId     Int?
+  semester     Int
+  academicYear Int
+  gpa          Decimal @db.Decimal(3, 2)
+  gpax         Decimal @db.Decimal(3, 2)
+  creditAttempt Decimal @db.Decimal(5, 2)
+  gradePoint   Decimal @db.Decimal(7, 2)
+
+  user User @relation(fields: [userId], references: [id])
+  upload TranscriptUpload? @relation(fields: [uploadId], references: [id])
+
+}
+
+model CourseOffering {
+  id           Int @id @default(autoincrement())
+  courseId     Int
+  academicYear Int
+  semester     Int
+  isSummer     Boolean @default(false)
+
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@unique([courseId, academicYear, semester])
+}
+
+model Rule {
+  id          Int      @id @default(autoincrement())
+  programId   Int?
+  code        String
+  name        String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  program Program? @relation(fields: [programId], references: [id])
+
+  @@unique([programId, code])
+}
+
+model AnalysisResult {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  riskStatus  String
+  summary     String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  recommendations Recommendation[]
+}
+
+model Recommendation {
+  id               Int      @id @default(autoincrement())
+  analysisResultId Int
+  message          String
+  reason           String
+  priority         Int
+  createdAt        DateTime @default(now())
+
+  analysisResult AnalysisResult @relation(fields: [analysisResultId], references: [id])
+}
+
+model SimulationSession {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  targetGpax  Decimal  @db.Decimal(3, 2)
+  resultGpax  Decimal? @db.Decimal(3, 2)
+  createdAt   DateTime @default(now())
+
+  user    User               @relation(fields: [userId], references: [id])
+  courses SimulationCourse[]
+}
+
+model SimulationCourse {
+  id                Int    @id @default(autoincrement())
+  simulationSessionId Int
+  courseId          Int?
+  courseCode        String
+  credits           Int
+  expectedGradeChar String
+
+  session SimulationSession @relation(fields: [simulationSessionId], references: [id])
+  course  Course?           @relation(fields: [courseId], references: [id])
+}

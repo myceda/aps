@@ -140,11 +140,13 @@ async function main() {
   for (const code of summerOfferings) {
     const course = await findCourseByCode(code);
     if (!course) continue;
-    await prisma.courseOffering.upsert({
-      where: { courseId_academicYear_semester: { courseId: course.id, academicYear: 2567, semester: 3 } },
-      create: { courseId: course.id, academicYear: 2567, semester: 3, isSummer: true },
-      update: { isSummer: true }
-    });
+    for (const academicYear of [2567, 2568]) {
+      await prisma.courseOffering.upsert({
+        where: { courseId_academicYear_semester: { courseId: course.id, academicYear, semester: 3 } },
+        create: { courseId: course.id, academicYear, semester: 3, isSummer: true },
+        update: { isSummer: true }
+      });
+    }
   }
 
   const offeringPlans = demoStudyPlan.filter((plan) => plan.courseCode && plan.semester !== 3);

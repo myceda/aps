@@ -7,7 +7,7 @@ export function RiskImpactPanel({ analysis }: { analysis: AnalysisResult }) {
 
   return (
     <section className="surface p-4">
-      <h2 className="text-lg font-bold">F/W และผลกระทบต่อ prerequisite</h2>
+      <h2 className="text-lg font-bold">F/W และผลกระทบต่อวิชาบังคับก่อน</h2>
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
         <div>
           <p className="text-sm font-semibold text-slate-600">รายวิชาที่เคยมี F/W</p>
@@ -24,7 +24,7 @@ export function RiskImpactPanel({ analysis }: { analysis: AnalysisResult }) {
           <p className="text-sm font-semibold text-slate-600">ผลกระทบที่ระบบตรวจพบ</p>
           <div className="mt-2 space-y-2">
             {analysis.prerequisiteImpacts.length === 0 ? (
-              <p className="text-sm text-slate-600">ไม่พบผลกระทบจาก prerequisite ในข้อมูลตัวอย่าง</p>
+              <p className="text-sm text-slate-600">ไม่พบผลกระทบจากวิชาบังคับก่อนในข้อมูลตัวอย่าง</p>
             ) : (
               analysis.prerequisiteImpacts.map((impact) => (
                 <div className="rounded-md border border-line p-3" key={`${impact.failedPrereqCode}-${impact.blockedCourseCode}`}>

@@ -1,4 +1,3 @@
-import { demoCourses, demoPrerequisites, demoStudyPlan, gradeMappings, summerOfferings } from "@/data/demo-data";
 import { createGradeMap, getGradeMapping } from "@/lib/analysis/status";
 import type { Course, CourseDependency, CourseStatus, GradeMapping, PrerequisiteImpact, PrerequisiteRule, ProgramCode, StudyPlanItem, TranscriptCourse } from "@/lib/types";
 
@@ -13,11 +12,11 @@ export function analyzePrerequisiteImpact(
     summerOfferings?: Set<string>;
   } = {}
 ): PrerequisiteImpact[] {
-  const courses = data.courses ?? demoCourses;
-  const prerequisites = data.prerequisites ?? demoPrerequisites;
-  const studyPlan = data.studyPlan ?? demoStudyPlan;
-  const offeringSet = data.summerOfferings ?? summerOfferings;
-  const gradeMap = createGradeMap(data.gradeMappings ?? gradeMappings);
+  const courses = data.courses ?? [];
+  const prerequisites = data.prerequisites ?? [];
+  const studyPlan = data.studyPlan ?? [];
+  const offeringSet = data.summerOfferings ?? new Set<string>();
+  const gradeMap = createGradeMap(data.gradeMappings ?? []);
   const impacts: PrerequisiteImpact[] = [];
 
   for (const attempt of transcriptCourses) {
@@ -38,7 +37,7 @@ export function analyzePrerequisiteImpact(
         plannedSemester: planned.semester,
         hasSummerOffering: offeringSet.has(attempt.courseCode),
         recommendation: offeringSet.has(attempt.courseCode)
-          ? `ควรลง ${attempt.courseCode} ซ้ำในเทอมที่เปิดหรือ summer ก่อนถึง ${blockedCourse.code}`
+          ? `ควรลง ${attempt.courseCode} ซ้ำในเทอมที่เปิดหรือเทอม 3/Summer ก่อนถึง ${blockedCourse.code}`
           : `ควรวางแผนลง ${attempt.courseCode} ซ้ำ เพราะกระทบ ${blockedCourse.code}`
       });
     }
@@ -56,9 +55,9 @@ export function buildCourseDependencies(
     studyPlan?: StudyPlanItem[];
   } = {}
 ): CourseDependency[] {
-  const courses = data.courses ?? demoCourses;
-  const prerequisites = data.prerequisites ?? demoPrerequisites;
-  const studyPlan = data.studyPlan ?? demoStudyPlan;
+  const courses = data.courses ?? [];
+  const prerequisites = data.prerequisites ?? [];
+  const studyPlan = data.studyPlan ?? [];
   const statusByCode = new Map(courseStatuses.map((course) => [course.courseCode, course]));
   const dependencies: CourseDependency[] = [];
 

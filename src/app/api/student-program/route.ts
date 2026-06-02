@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth/api-guard";
-import { getStudentProgram, upsertStudentProgram } from "@/lib/db/repository";
+import { getStudentProgram, listPrograms, upsertStudentProgram } from "@/lib/db/repository";
 import type { ProgramCode } from "@/lib/types";
 
 export async function GET() {
   const auth = await requireApiUser(["student", "admin"]);
   if (auth.error) return auth.error;
 
-  return NextResponse.json({ success: true, studentProgram: await getStudentProgram(auth.user.id) });
+  const [studentProgram, programs] = await Promise.all([
+    getStudentProgram(auth.user.id),
+    listPrograms()
+  ]);
+  return NextResponse.json({ success: true, studentProgram, programs });
 }
 
 export async function POST(request: Request) {

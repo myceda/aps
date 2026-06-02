@@ -25,7 +25,7 @@ export function checkReadiness(program: Program, courseStatuses: CourseStatus[],
           ? "GPAX อยู่ในช่วงเกียรตินิยมอันดับหนึ่งตามเกณฑ์เบื้องต้น"
           : gpax >= program.honorSecondClassMin
             ? "GPAX อยู่ในช่วงเกียรตินิยมอันดับสองตามเกณฑ์เบื้องต้น"
-            : "GPAX ยังไม่ถึงเกณฑ์เกียรตินิยม ควรใช้ simulation วางแผนเทอมถัดไป"
+            : "GPAX ยังไม่ถึงเกณฑ์เกียรตินิยม ควรใช้ระบบจำลองวางแผนเทอมถัดไป"
     },
     {
       name: "ความเสี่ยงจบการศึกษา",

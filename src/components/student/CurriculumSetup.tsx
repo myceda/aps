@@ -1,6 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+type ProgramOption = {
+  code: string;
+  nameTh: string;
+};
 
 export function CurriculumSetup({
   initialProgramCode,
@@ -11,10 +16,25 @@ export function CurriculumSetup({
   initialStudentCode?: string;
   initialTrack?: string;
 }) {
-  const [programCode, setProgramCode] = useState(initialProgramCode ?? "CS2565");
+  const [programCode, setProgramCode] = useState(initialProgramCode ?? "");
+  const [programs, setPrograms] = useState<ProgramOption[]>([]);
   const [studentCode, setStudentCode] = useState(initialStudentCode ?? "");
   const [track, setTrack] = useState(initialTrack ?? "research");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    async function loadPrograms() {
+      const response = await fetch("/api/student-program");
+      const data = await response.json();
+      const nextPrograms = Array.isArray(data.programs) ? data.programs : [];
+      setPrograms(nextPrograms);
+      if (!programCode && nextPrograms[0]?.code) {
+        setProgramCode(nextPrograms[0].code);
+      }
+    }
+
+    void loadPrograms();
+  }, [programCode]);
 
   async function save() {
     const response = await fetch("/api/student-program", {
@@ -29,14 +49,18 @@ export function CurriculumSetup({
 
   return (
     <section className="surface p-4">
-      <h2 className="text-lg font-bold">ตั้งค่าหลักสูตรครั้งแรก</h2>
-      <p className="mt-1 text-sm text-slate-600">เลือกหลักสูตร ปีหลักสูตร และแผนการเรียนเพื่อให้ระบบวิเคราะห์ transcript ได้ตรงเงื่อนไข</p>
+      <h2 className="text-lg font-bold">แก้ข้อมูลหลักสูตรและแผนการเรียน</h2>
+      <p className="mt-1 text-sm text-slate-600">
+        เลือกหลักสูตร รหัสนักศึกษา และแผนการเรียน เพื่อให้ระบบวิเคราะห์ transcript ได้ตรงเงื่อนไข
+      </p>
       <div className="mt-4 grid gap-3 md:grid-cols-4">
         <label className="text-sm font-semibold">
           หลักสูตร
           <select className="mt-2 w-full rounded-md border border-line px-3 py-2" value={programCode} onChange={(event) => setProgramCode(event.target.value)}>
-            <option value="CS2565">CS2565 วิทยาการคอมพิวเตอร์</option>
-            <option value="IT2565">IT2565 เทคโนโลยีสารสนเทศ</option>
+            {programs.length === 0 ? <option value="">ยังไม่มีหลักสูตรในระบบ</option> : null}
+            {programs.map((program) => (
+              <option key={program.code} value={program.code}>{program.code} {program.nameTh}</option>
+            ))}
           </select>
         </label>
         <label className="text-sm font-semibold">
@@ -51,7 +75,7 @@ export function CurriculumSetup({
           </select>
         </label>
         <div className="flex items-end">
-          <button className="w-full rounded-md bg-teal px-4 py-2 text-sm font-semibold text-white" onClick={save}>
+          <button className="w-full rounded-md bg-teal px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" disabled={!programCode || !studentCode} onClick={save}>
             บันทึก
           </button>
         </div>

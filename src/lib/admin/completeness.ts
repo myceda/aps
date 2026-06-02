@@ -7,25 +7,25 @@ export async function checkCurriculumCompleteness() {
 
   for (const program of programs) {
     if (!structures.some((structure) => structure.programCode === program.code)) {
-      issues.push(`${program.code} ยังไม่มี program structure`);
+      issues.push(`${program.code} ยังไม่มีโครงสร้างหลักสูตร`);
     }
     if (!plans.some((plan) => plan.programCode === program.code)) {
-      issues.push(`${program.code} ยังไม่มี study plan`);
+      issues.push(`${program.code} ยังไม่มีแผนการเรียน`);
     }
   }
 
   for (const plan of plans) {
     if (plan.courseCode && !courses.some((course) => course.code === plan.courseCode)) {
-      issues.push(`Study plan อ้างถึงรายวิชา ${plan.courseCode} แต่ไม่มีใน course master`);
+      issues.push(`แผนการเรียนอ้างถึงรายวิชา ${plan.courseCode} แต่ไม่มีในข้อมูลรายวิชาหลัก`);
     }
   }
 
   for (const rule of prerequisites) {
     if (!courses.some((course) => course.code === rule.courseCode)) {
-      issues.push(`Prerequisite ปลายทาง ${rule.courseCode} ไม่พบใน course master`);
+      issues.push(`วิชาบังคับก่อนฝั่งปลายทาง ${rule.courseCode} ไม่พบในข้อมูลรายวิชาหลัก`);
     }
     if (!courses.some((course) => course.code === rule.prereqCourseCode)) {
-      issues.push(`Prerequisite ต้นทาง ${rule.prereqCourseCode} ไม่พบใน course master`);
+      issues.push(`วิชาบังคับก่อนฝั่งต้นทาง ${rule.prereqCourseCode} ไม่พบในข้อมูลรายวิชาหลัก`);
     }
   }
 

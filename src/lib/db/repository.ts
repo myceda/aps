@@ -2,6 +2,7 @@ import type { PlanTrack as PrismaPlanTrack, Prisma, UserRole } from "@prisma/cli
 import { prisma } from "@/lib/db/prisma";
 import type {
   Course,
+  CourseOffering,
   GradeMapping,
   PrerequisiteRule,
   Program,
@@ -23,6 +24,7 @@ export type AnalysisData = {
   gradeMappings: GradeMapping[];
   transcriptCourses: TranscriptCourse[];
   transcriptSummaries: TranscriptSummary[];
+  courseOfferings: CourseOffering[];
   summerOfferings: Set<string>;
 };
 
@@ -43,7 +45,7 @@ export async function getAnalysisData(userId: number, programCode: ProgramCode):
       prisma.gradeMapping.findMany(),
       prisma.studentGrade.findMany({ where: transcriptWhere, orderBy: [{ academicYear: "asc" }, { semester: "asc" }, { id: "asc" }] }),
       prisma.transcriptSemesterSummary.findMany({ where: transcriptWhere, orderBy: [{ academicYear: "asc" }, { semester: "asc" }] }),
-      prisma.courseOffering.findMany({ where: { isSummer: true }, include: { course: true } })
+      prisma.courseOffering.findMany({ include: { course: true } })
     ]);
 
   if (!programs.some((program) => program.code === programCode)) {
@@ -58,10 +60,10 @@ export async function getAnalysisData(userId: number, programCode: ProgramCode):
       credits: course.credits,
       category: course.category,
       groupName: course.groupName ?? undefined,
-      programCode: (course.program?.code as ProgramCode | undefined) ?? undefined
+      programCode: course.program?.code ?? undefined
     })),
     structures: structures.map((structure) => ({
-      programCode: structure.program.code as ProgramCode,
+      programCode: structure.program.code,
       category: structure.category,
       minCredits: structure.minCredits,
       description: structure.description ?? undefined
@@ -73,7 +75,7 @@ export async function getAnalysisData(userId: number, programCode: ProgramCode):
       conditionNote: rule.conditionNote ?? undefined
     })),
     studyPlan: studyPlan.map((plan) => ({
-      programCode: plan.program.code as ProgramCode,
+      programCode: plan.program.code,
       yearLevel: plan.yearLevel,
       semester: plan.semester,
       track: plan.track ? mapPlanTrack(plan.track) : undefined,
@@ -105,18 +107,56 @@ export async function getAnalysisData(userId: number, programCode: ProgramCode):
       creditAttempt: Number(summary.creditAttempt),
       gradePoint: Number(summary.gradePoint)
     })),
-    summerOfferings: new Set(offerings.map((offering) => offering.course.code).filter(Boolean)),
+    courseOfferings: offerings.map((offering) => ({
+      courseCode: offering.course.code,
+      academicYear: offering.academicYear,
+      semester: offering.semester,
+      isSummer: offering.isSummer
+    })),
+    summerOfferings: new Set(offerings.filter((offering) => offering.isSummer).map((offering) => offering.course.code).filter(Boolean)),
   };
 }
 
 export async function getCurriculumData() {
-  const data = await getAnalysisData(await getDemoUserId(), "CS2565");
+  const [programs, courses, structures, prerequisites, studyPlan] = await Promise.all([
+    prisma.program.findMany(),
+    prisma.course.findMany({ include: { program: true } }),
+    prisma.programStructure.findMany({ include: { program: true } }),
+    prisma.prerequisite.findMany({ include: { course: true, prereqCourse: true } }),
+    prisma.studyPlan.findMany({ include: { program: true, course: true } })
+  ]);
+
   return {
-    programs: data.programs,
-    courses: data.courses,
-    structures: data.structures,
-    prerequisites: data.prerequisites,
-    studyPlan: data.studyPlan
+    programs: programs.map(mapProgram),
+    courses: courses.map((course) => ({
+      code: course.code,
+      nameTh: course.nameTh,
+      credits: course.credits,
+      category: course.category,
+      groupName: course.groupName ?? undefined,
+      programCode: course.program?.code ?? undefined
+    })),
+    structures: structures.map((structure) => ({
+      programCode: structure.program.code,
+      category: structure.category,
+      minCredits: structure.minCredits,
+      description: structure.description ?? undefined
+    })),
+    prerequisites: prerequisites.map((rule) => ({
+      courseCode: rule.course.code,
+      prereqCourseCode: rule.prereqCourse.code,
+      isCorequisite: rule.isCorequisite,
+      conditionNote: rule.conditionNote ?? undefined
+    })),
+    studyPlan: studyPlan.map((plan) => ({
+      programCode: plan.program.code,
+      yearLevel: plan.yearLevel,
+      semester: plan.semester,
+      track: plan.track ? mapPlanTrack(plan.track) : undefined,
+      courseCode: plan.course?.code,
+      placeholder: plan.placeholder ?? undefined,
+      credits: plan.credits
+    }))
   };
 }
 
@@ -135,6 +175,23 @@ export async function getStudentProgram(userId: number) {
     track: mapPlanTrack(studentProgram.track),
     program: mapProgram(studentProgram.program)
   };
+}
+
+export async function listPrograms() {
+  const programs = await prisma.program.findMany({ orderBy: [{ academicYear: "desc" }, { code: "asc" }] });
+  return programs.map(mapProgram);
+}
+
+export async function resolveProgramCode(userId: number, explicitProgramCode?: string | null) {
+  if (explicitProgramCode?.trim()) return explicitProgramCode.trim();
+
+  const studentProgram = await getStudentProgram(userId);
+  if (studentProgram?.program.code) return studentProgram.program.code;
+
+  const firstProgram = await prisma.program.findFirst({ orderBy: [{ academicYear: "desc" }, { code: "asc" }] });
+  if (firstProgram?.code) return firstProgram.code;
+
+  throw new Error("ยังไม่มีหลักสูตรในระบบ กรุณาให้ admin เพิ่มหลักสูตรก่อน");
 }
 
 export async function upsertStudentProgram(userId: number, input: { programCode: ProgramCode; studentCode: string; track: "research" | "coop" }) {
@@ -280,7 +337,7 @@ export async function upsertUserByEmail(email: string, name: string, role: UserR
 
 function mapProgram(program: Prisma.ProgramGetPayload<object>): Program {
   return {
-    code: program.code as ProgramCode,
+    code: program.code,
     nameTh: program.nameTh,
     nameEn: program.nameEn,
     academicYear: program.academicYear,

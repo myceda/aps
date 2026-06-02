@@ -3,10 +3,24 @@ import type { AnalysisResult, Recommendation } from "@/lib/types";
 export function buildRecommendations(result: Omit<AnalysisResult, "recommendations">): Recommendation[] {
   const recommendations: Recommendation[] = [];
 
+  if (result.proStatus.level === "high_probation" || result.proStatus.level === "low_probation") {
+    recommendations.push({
+      message: `จัดแผนฟื้นสถานะ ${result.proStatus.label} ก่อนลงวิชาหนักในเทอมถัดไป`,
+      reason: result.proStatus.reasons.slice(0, 2).map((reason) => reason.title).join(", "),
+      priority: 1
+    });
+  } else if (result.proStatus.level === "risk_next_term") {
+    recommendations.push({
+      message: "ตรวจแผนเทอมถัดไปเพื่อลดความเสี่ยงโปรต่ำ",
+      reason: result.proStatus.reasons.slice(0, 2).map((reason) => reason.title).join(", "),
+      priority: 2
+    });
+  }
+
   for (const impact of result.prerequisiteImpacts) {
     recommendations.push({
       message: impact.recommendation,
-      reason: `${impact.failedPrereqCode} เคยได้ F/W และเป็น prerequisite ของ ${impact.blockedCourseCode}`,
+      reason: `${impact.failedPrereqCode} เคยได้ F/W และเป็นวิชาบังคับก่อนของ ${impact.blockedCourseCode}`,
       priority: impact.hasSummerOffering ? 1 : 2
     });
   }

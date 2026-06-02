@@ -155,11 +155,12 @@ async function buildData(resource: AdminResource, input: Record<string, unknown>
       };
     }
     case "offerings":
+      const semester = requireNumber(input, "semester");
       return {
         course: { connect: { id: await getCourseId(requireString(input, "courseCode")) } },
         academicYear: requireNumber(input, "academicYear"),
-        semester: requireNumber(input, "semester"),
-        isSummer: Boolean(input.isSummer ?? false)
+        semester,
+        isSummer: semester === 3
       };
   }
 }

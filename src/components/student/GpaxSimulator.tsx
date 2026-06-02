@@ -94,7 +94,7 @@ export function GpaxSimulator({ programCode }: { programCode: string }) {
           <select className="mt-2 w-full rounded-md border border-line px-3 py-2" value={semester} onChange={(event) => setSemester(Number(event.target.value))}>
             <option value={1}>1</option>
             <option value={2}>2</option>
-            <option value={3}>Summer</option>
+            <option value={3}>ภาคฤดูร้อน</option>
           </select>
         </label>
         <label className="text-sm font-semibold">
@@ -116,7 +116,7 @@ export function GpaxSimulator({ programCode }: { programCode: string }) {
           <tbody>
             {offerings.length === 0 ? (
               <tr>
-                <td className="px-3 py-3 text-slate-600" colSpan={4}>ยังไม่มี course offering สำหรับเทอมนี้</td>
+                <td className="px-3 py-3 text-slate-600" colSpan={4}>ยังไม่มีรายวิชาที่เปิดสอนสำหรับเทอมนี้</td>
               </tr>
             ) : (
               offerings.map((offering) => (
@@ -142,7 +142,7 @@ export function GpaxSimulator({ programCode }: { programCode: string }) {
       </div>
 
       <div className="mt-4 rounded-md border border-line p-3">
-        <p className="text-sm text-slate-500">Simulated GPAX</p>
+        <p className="text-sm text-slate-500">GPAX จำลอง</p>
         <p className="mt-1 text-2xl font-bold">{result ? result.simulatedGpax.toFixed(2) : "..."}</p>
         <p className="text-sm text-slate-600">{result?.reachesTarget ? "ถึงเป้าหมาย" : "ยังไม่ถึงเป้าหมาย"}</p>
       </div>

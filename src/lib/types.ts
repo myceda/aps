@@ -1,8 +1,9 @@
 export type UserRole = "student" | "admin";
-export type ProgramCode = "CS2565" | "IT2565";
+export type ProgramCode = string;
 export type PlanTrack = "research" | "coop";
 export type GradeStatus = "passed" | "failed" | "withdrawn" | "not_taken" | "non_credit";
 export type RiskStatus = "normal" | "watch" | "urgent";
+export type ProStatusLevel = "normal" | "high_probation" | "low_probation" | "risk_next_term";
 
 export type Program = {
   code: ProgramCode;
@@ -45,6 +46,13 @@ export type PrerequisiteRule = {
   prereqCourseCode: string;
   isCorequisite?: boolean;
   conditionNote?: string;
+};
+
+export type CourseOffering = {
+  courseCode: string;
+  academicYear: number;
+  semester: number;
+  isSummer?: boolean;
 };
 
 export type GradeMapping = {
@@ -135,6 +143,66 @@ export type Recommendation = {
   priority: number;
 };
 
+export type ProStatusReason = {
+  title: string;
+  detail: string;
+  severity: RiskStatus;
+};
+
+export type ProStatus = {
+  level: ProStatusLevel;
+  label: string;
+  tone: RiskStatus;
+  summary: string;
+  reasons: ProStatusReason[];
+  nextActions: string[];
+};
+
+export type GraduationForecastCourse = {
+  courseCode: string;
+  courseName: string;
+  credits: number;
+  category: string;
+  reason: string;
+};
+
+export type GraduationForecastTerm = {
+  academicYear: number;
+  semester: number;
+  creditLimit: number;
+  plannedCredits: number;
+  courses: GraduationForecastCourse[];
+};
+
+export type GraduationForecast = {
+  canGraduate: boolean;
+  expectedAcademicYear?: number;
+  expectedSemester?: number;
+  remainingCredits: number;
+  plannedCredits: number;
+  terms: GraduationForecastTerm[];
+  blockedCourses: GraduationForecastCourse[];
+  notes: string[];
+};
+
+export type WhatIfSimulationInput = {
+  withdrawCourseCode?: string;
+  addCourseCode?: string;
+  failCourseCode?: string;
+  academicYear: number;
+  semester: number;
+};
+
+export type WhatIfSimulationResult = {
+  baselineForecast: GraduationForecast;
+  simulatedForecast: GraduationForecast;
+  graduationDelayTerms: number | null;
+  unlockedCourses: GraduationForecastCourse[];
+  newlyBlockedCourses: GraduationForecastCourse[];
+  summary: string;
+  notes: string[];
+};
+
 export type AnalysisResult = {
   gpax: number;
   latestGpa: number;
@@ -142,11 +210,13 @@ export type AnalysisResult = {
   totalCreditsMin: number;
   missingCredits: number;
   riskStatus: RiskStatus;
+  proStatus: ProStatus;
   categoryProgress: CategoryProgress[];
   courseStatuses: CourseStatus[];
   prerequisiteImpacts: PrerequisiteImpact[];
   courseDependencies: CourseDependency[];
   readiness: ReadinessCheck[];
+  graduationForecast: GraduationForecast;
   recommendations: Recommendation[];
 };
 

@@ -1,8 +1,24 @@
 import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth/api-guard";
 import { createTranscriptUpload } from "@/lib/db/repository";
-import { sampleTranscriptText } from "@/lib/transcript/sample-text";
+import type { TranscriptPreview } from "@/lib/types";
 import { parseTranscriptText } from "@/lib/transcript/parser";
+import { sampleTranscriptText } from "@/lib/transcript/sample-text";
+import { validateTranscriptPreview } from "@/lib/transcript/validator";
+
+export const runtime = "nodejs";
+
+type TranscriptPreviewResponse = {
+  success: true;
+  uploadId: number;
+  preview: TranscriptPreview;
+  intake: {
+    method: "pdf-text" | "manual-text";
+    status: "ready" | "needs_review" | "empty";
+    message: string;
+    nextActions: string[];
+  };
+};
 
 export async function POST(request: Request) {
   const auth = await requireApiUser(["student", "admin"]);
@@ -14,7 +30,12 @@ export async function POST(request: Request) {
     const body = (await request.json()) as { text?: string };
     const preview = parseTranscriptText(body.text ?? sampleTranscriptText);
     const upload = await createTranscriptUpload(auth.user.id, "manual-transcript-text", preview.warnings.join("\n") || null);
-    return NextResponse.json({ success: true, uploadId: upload.id, preview });
+    return NextResponse.json<TranscriptPreviewResponse>({
+      success: true,
+      uploadId: upload.id,
+      preview,
+      intake: buildIntakeState(preview, "manual-text")
+    });
   }
 
   const form = await request.formData();
@@ -23,24 +44,93 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "file is required" }, { status: 400 });
   }
 
-  // unpdf is the intended extractor for text-based PDFs. If extraction fails,
-  // the user still gets a reviewable preview response with warnings.
-  try {
-    const { extractText, getDocumentProxy } = await import("unpdf");
-    const buffer = new Uint8Array(await file.arrayBuffer());
-    const pdf = await getDocumentProxy(buffer);
-    const result = await extractText(pdf, { mergePages: true });
-    const text = Array.isArray(result.text) ? result.text.join("\n") : result.text;
-    const preview = parseTranscriptText(text);
-    const upload = await createTranscriptUpload(auth.user.id, file.name, preview.warnings.join("\n") || null);
-    return NextResponse.json({ success: true, uploadId: upload.id, preview });
-  } catch {
-    const upload = await createTranscriptUpload(auth.user.id, file.name, "ไม่สามารถสกัดข้อความด้วย unpdf ได้");
-    return NextResponse.json({
+  if (!isPdfFile(file)) {
+    const preview = withWarning(
+      parseTranscriptText(""),
+      "ตอนนี้รองรับ PDF transcript ก่อน ส่วน CSV/Excel จะเพิ่มเป็นช่องทางนำเข้าในขั้นตอนถัดไป"
+    );
+    const upload = await createTranscriptUpload(auth.user.id, file.name, preview.warnings.join("\n"));
+    return NextResponse.json<TranscriptPreviewResponse>({
       success: true,
       uploadId: upload.id,
-      preview: parseTranscriptText(""),
-      warning: "ไม่สามารถสกัดข้อความด้วย unpdf ได้ ต้องให้ผู้ใช้ตรวจหรือแก้ไขด้วยตนเอง"
+      preview,
+      intake: buildIntakeState(preview, "pdf-text")
     });
   }
+
+  try {
+    const pdfBytes = Buffer.from(await file.arrayBuffer());
+    const text = await extractPdfText(pdfBytes);
+    const preview = parseTranscriptText(text);
+    const upload = await createTranscriptUpload(auth.user.id, file.name, preview.warnings.join("\n") || null);
+
+    return NextResponse.json<TranscriptPreviewResponse>({
+      success: true,
+      uploadId: upload.id,
+      preview,
+      intake: buildIntakeState(preview, "pdf-text")
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    console.error("Transcript preview failed", error);
+
+    const preview = withWarning(
+      parseTranscriptText(""),
+      `ระบบอ่านข้อความจาก PDF ไม่สำเร็จ (${message}) ผู้ใช้ยังสามารถเพิ่มรายวิชาด้วยตนเองก่อนบันทึกได้`
+    );
+    const upload = await createTranscriptUpload(auth.user.id, file.name, preview.warnings.join("\n"));
+
+    return NextResponse.json<TranscriptPreviewResponse>({
+      success: true,
+      uploadId: upload.id,
+      preview,
+      intake: buildIntakeState(preview, "pdf-text")
+    });
+  }
+}
+
+async function extractPdfText(pdfBytes: Uint8Array) {
+  const { extractText, getDocumentProxy } = await import("unpdf");
+  const pdf = await getDocumentProxy(Uint8Array.from(pdfBytes));
+  const result = await extractText(pdf, { mergePages: true });
+  return Array.isArray(result.text) ? result.text.join("\n") : result.text;
+}
+
+function isPdfFile(file: File) {
+  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+}
+
+function withWarning(preview: TranscriptPreview, warning: string) {
+  return validateTranscriptPreview({
+    ...preview,
+    warnings: [...preview.warnings, warning],
+    canConfirm: false
+  });
+}
+
+function buildIntakeState(preview: TranscriptPreview, method: "pdf-text" | "manual-text") {
+  if (preview.courses.length === 0) {
+    return {
+      method,
+      status: "empty" as const,
+      message: "ยังไม่พบรายวิชาในไฟล์ แต่ยังสามารถเพิ่มรายวิชาด้วยตนเองเพื่อให้ระบบวิเคราะห์ต่อได้",
+      nextActions: ["เพิ่มรายวิชาด้วยตนเอง", "ตรวจรหัสวิชา เกรด เทอม และปี", "ยืนยันและบันทึก transcript"]
+    };
+  }
+
+  if (preview.warnings.length > 0) {
+    return {
+      method,
+      status: "needs_review" as const,
+      message: "อ่านรายวิชาได้แล้ว แต่มีบางแถวที่ต้องตรวจเพิ่มก่อนบันทึก",
+      nextActions: ["ตรวจรายการแถวที่ต้องตรวจ", "แก้ข้อมูลในตาราง preview", "ยืนยันและบันทึก transcript"]
+    };
+  }
+
+  return {
+    method,
+    status: "ready" as const,
+    message: "อ่านรายวิชาได้และพร้อมให้ตรวจทานก่อนบันทึก",
+    nextActions: ["ตรวจทานข้อมูล", "ยืนยันและบันทึก transcript"]
+  };
 }

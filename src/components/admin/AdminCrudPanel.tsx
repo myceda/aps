@@ -1,110 +1,699 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-const resources = [
-  "programs",
-  "courses",
-  "structures",
-  "study-plans",
-  "prerequisites",
-  "rules",
-  "offerings"
-];
+type ResourceKey = "programs" | "structures" | "courses" | "prerequisites" | "study-plans" | "offerings";
+type FormState = Record<string, string | number | boolean>;
 
-const examples: Record<string, string> = {
-  programs: JSON.stringify({ code: "CS2570", nameTh: "หลักสูตรใหม่", nameEn: "New Program", academicYear: 2570, totalCreditsMin: 126, honorFirstClassMin: 3.6, honorSecondClassMin: 3.25 }, null, 2),
-  courses: JSON.stringify({ programCode: "IT2565", code: "520999", nameTh: "รายวิชาตัวอย่าง", credits: 3, category: "วิชาเลือก" }, null, 2),
-  structures: JSON.stringify({ programCode: "IT2565", category: "วิชาเลือกเสรี", minCredits: 6 }, null, 2),
-  "study-plans": JSON.stringify({ programCode: "IT2565", courseCode: "520221", yearLevel: 2, semester: 1, track: "research", credits: 3 }, null, 2),
-  prerequisites: JSON.stringify({ courseCode: "520221", prereqCourseCode: "520101", isCorequisite: false }, null, 2),
-  rules: JSON.stringify({ programCode: "CS2565", code: "HONOR_2", name: "เกียรตินิยมอันดับสอง", description: "GPAX ขั้นต่ำ 3.25 และเป็นไปตามเงื่อนไขมหาวิทยาลัย" }, null, 2),
-  offerings: JSON.stringify({ courseCode: "517261", academicYear: 2567, semester: 3, isSummer: true }, null, 2)
+type ProgramItem = {
+  id: number;
+  code: string;
+  nameTh: string;
+  nameEn: string;
+  academicYear: number;
+  totalCreditsMin: number;
+  honorFirstClassMin: string | number;
+  honorSecondClassMin: string | number;
 };
 
-export function AdminCrudPanel() {
-  const [resource, setResource] = useState(resources[0]);
-  const [items, setItems] = useState<unknown[]>([]);
-  const [payload, setPayload] = useState(examples[resources[0]]);
-  const [editId, setEditId] = useState("");
-  const [message, setMessage] = useState("");
+type ProgramStructureItem = {
+  id: number;
+  category: string;
+  minCredits: number;
+  description?: string | null;
+  program: ProgramItem;
+};
 
-  const endpoint = useMemo(() => `/api/admin/${resource}`, [resource]);
+type CourseItem = {
+  id: number;
+  code: string;
+  nameTh: string;
+  nameEn?: string | null;
+  credits: number;
+  category: string;
+  groupName?: string | null;
+  program?: { code: string } | null;
+};
+
+type PrerequisiteItem = {
+  id: number;
+  isCorequisite: boolean;
+  conditionNote?: string | null;
+  course: CourseItem;
+  prereqCourse: CourseItem;
+};
+
+type StudyPlanItem = {
+  id: number;
+  yearLevel: number;
+  semester: number;
+  track?: "RESEARCH" | "COOP" | null;
+  placeholder?: string | null;
+  credits: number;
+  program: ProgramItem;
+  course?: CourseItem | null;
+};
+
+type OfferingItem = {
+  id: number;
+  academicYear: number;
+  semester: number;
+  isSummer: boolean;
+  course: CourseItem;
+};
+
+type AdminItem = ProgramItem | ProgramStructureItem | CourseItem | PrerequisiteItem | StudyPlanItem | OfferingItem;
+
+type SelectOption = { key?: string; value: string | number; label: string };
+
+type FieldConfig = {
+  name: string;
+  label: string;
+  type?: "text" | "number" | "select" | "checkbox";
+  required?: boolean;
+  helper?: string;
+  options?: (state: AdminData) => SelectOption[];
+};
+
+type ResourceConfig = {
+  key: ResourceKey;
+  step: string;
+  label: string;
+  title: string;
+  goal: string;
+  description: string;
+  checklist: string[];
+  defaults: FormState;
+  fields: FieldConfig[];
+};
+
+type AdminData = Record<ResourceKey, AdminItem[]>;
+
+const emptyData: AdminData = {
+  programs: [],
+  structures: [],
+  courses: [],
+  prerequisites: [],
+  "study-plans": [],
+  offerings: []
+};
+
+const semesterOptions = [
+  { key: "semester-1", value: 1, label: "เทอม 1" },
+  { key: "semester-2", value: 2, label: "เทอม 2" },
+  { key: "semester-3", value: 3, label: "เทอม 3 / Summer" }
+];
+
+const trackOptions = [
+  { key: "track-all", value: "", label: "ทุก track" },
+  { key: "track-research", value: "RESEARCH", label: "Research" },
+  { key: "track-coop", value: "COOP", label: "Co-op" }
+];
+
+const resourceConfigs: ResourceConfig[] = [
+  {
+    key: "programs",
+    step: "1",
+    label: "หลักสูตร",
+    title: "จัดการหลักสูตร",
+    goal: "สร้างเวอร์ชันหลักสูตรที่ระบบใช้เป็นฐานวิเคราะห์",
+    description: "กำหนดชื่อหลักสูตร ปีหลักสูตร หน่วยกิตขั้นต่ำ และเกณฑ์ GPAX เพื่อให้ระบบรู้ว่านักศึกษาต้องเรียนครบเท่าไร",
+    checklist: ["มีรหัสหลักสูตร เช่น CS2565 หรือ IT2565", "มีปีหลักสูตรและหน่วยกิตรวมขั้นต่ำ", "มีเกณฑ์ GPAX สำหรับสถานะและเกียรตินิยม"],
+    defaults: {
+      code: "",
+      nameTh: "",
+      nameEn: "",
+      academicYear: 2568,
+      totalCreditsMin: 126,
+      honorFirstClassMin: 3.6,
+      honorSecondClassMin: 3.25
+    },
+    fields: [
+      { name: "code", label: "รหัสหลักสูตร", required: true, helper: "เช่น CS2565 หรือ IT2565" },
+      { name: "nameTh", label: "ชื่อหลักสูตรภาษาไทย", required: true },
+      { name: "nameEn", label: "ชื่อหลักสูตรภาษาอังกฤษ", required: true },
+      { name: "academicYear", label: "ปีหลักสูตร", type: "number", required: true },
+      { name: "totalCreditsMin", label: "หน่วยกิตขั้นต่ำ", type: "number", required: true },
+      { name: "honorFirstClassMin", label: "GPAX เกียรตินิยมอันดับหนึ่ง", type: "number", required: true },
+      { name: "honorSecondClassMin", label: "GPAX เกียรตินิยมอันดับสอง", type: "number", required: true }
+    ]
+  },
+  {
+    key: "structures",
+    step: "1.1",
+    label: "โครงสร้างหลักสูตร",
+    title: "จัดการหมวดวิชาและหน่วยกิตขั้นต่ำ",
+    goal: "บอกระบบว่าหลักสูตรต้องครบหมวดใดบ้าง",
+    description: "ใช้ตรวจว่านักศึกษาเรียนครบหมวดวิชาและหน่วยกิตขั้นต่ำตามหลักสูตรหรือยัง",
+    checklist: ["เลือกหลักสูตรให้ถูกต้อง", "ระบุชื่อหมวดวิชาให้ตรงกับเอกสารหลักสูตร", "ใส่หน่วยกิตขั้นต่ำของหมวดนั้น"],
+    defaults: {
+      programCode: "",
+      category: "",
+      minCredits: 0,
+      description: ""
+    },
+    fields: [
+      { name: "programCode", label: "หลักสูตร", type: "select", required: true, options: programOptions },
+      { name: "category", label: "หมวดวิชา", required: true, helper: "เช่น วิชาเฉพาะบังคับ, วิชาเลือก, ศึกษาทั่วไป" },
+      { name: "minCredits", label: "หน่วยกิตขั้นต่ำของหมวดนี้", type: "number", required: true },
+      { name: "description", label: "คำอธิบายเพิ่มเติม" }
+    ]
+  },
+  {
+    key: "courses",
+    step: "2",
+    label: "รายวิชา",
+    title: "จัดการรายวิชา",
+    goal: "สร้างคลังรายวิชาที่ transcript และแผนเรียนจะนำไปเทียบ",
+    description: "เพิ่มรหัสวิชา ชื่อวิชา หน่วยกิต หมวดวิชา และหลักสูตรที่เกี่ยวข้อง รายวิชากลางสามารถเว้นหลักสูตรว่างได้",
+    checklist: ["รหัสวิชาตรงกับ transcript และเอกสารหลักสูตร", "หน่วยกิตถูกต้อง", "หมวดวิชาตรงกับโครงสร้างหลักสูตร"],
+    defaults: {
+      programCode: "",
+      code: "",
+      nameTh: "",
+      nameEn: "",
+      credits: 3,
+      category: "",
+      groupName: ""
+    },
+    fields: [
+      { name: "programCode", label: "หลักสูตร", type: "select", options: programOptions, helper: "เว้นว่างได้ถ้าเป็นวิชากลาง" },
+      { name: "code", label: "รหัสวิชา", required: true },
+      { name: "nameTh", label: "ชื่อวิชาภาษาไทย", required: true },
+      { name: "nameEn", label: "ชื่อวิชาภาษาอังกฤษ" },
+      { name: "credits", label: "หน่วยกิต", type: "number", required: true },
+      { name: "category", label: "หมวดวิชา", required: true },
+      { name: "groupName", label: "กลุ่มวิชา" }
+    ]
+  },
+  {
+    key: "prerequisites",
+    step: "3",
+    label: "Prerequisite",
+    title: "จัดการ prerequisite",
+    goal: "บอกระบบว่าวิชาใดต้องผ่านก่อน จึงจะลงวิชาต่อได้",
+    description: "ข้อมูลนี้ใช้หา block chain, what-if simulation และ graduation forecast",
+    checklist: ["เลือกวิชาที่ต้องการปลดล็อก", "เลือกวิชาบังคับก่อนให้ถูก", "ระบุ corequisite ถ้าสามารถเรียนพร้อมกันได้"],
+    defaults: {
+      courseCode: "",
+      prereqCourseCode: "",
+      isCorequisite: false,
+      conditionNote: ""
+    },
+    fields: [
+      { name: "courseCode", label: "วิชาที่ต้องการปลดล็อก", type: "select", required: true, options: courseOptions },
+      { name: "prereqCourseCode", label: "วิชาบังคับก่อน", type: "select", required: true, options: courseOptions },
+      { name: "isCorequisite", label: "เรียนพร้อมกันได้", type: "checkbox" },
+      { name: "conditionNote", label: "เงื่อนไขเพิ่มเติม" }
+    ]
+  },
+  {
+    key: "study-plans",
+    step: "4",
+    label: "Study plan",
+    title: "จัดการ study plan รายปี/รายเทอม",
+    goal: "วางรายวิชาตามปีและเทอม เพื่อใช้สร้างแผนจบและ diagram 8 ปี",
+    description: "ถ้ายังไม่รู้รหัสวิชาแน่ชัด สามารถใช้ข้อความแทนเพื่อแสดงหมวดวิชาหรือวิชาเลือกได้",
+    checklist: ["เลือกหลักสูตร", "ระบุชั้นปีและเทอม", "เลือกวิชาหรือกรอกข้อความแทน", "ใส่หน่วยกิตเพื่อให้แผนรวมถูกต้อง"],
+    defaults: {
+      programCode: "",
+      courseCode: "",
+      yearLevel: 1,
+      semester: 1,
+      track: "",
+      placeholder: "",
+      credits: 3
+    },
+    fields: [
+      { name: "programCode", label: "หลักสูตร", type: "select", required: true, options: programOptions },
+      { name: "courseCode", label: "รายวิชา", type: "select", options: courseOptions, helper: "เลือกวิชาหรือใช้ช่องข้อความแทนได้" },
+      { name: "yearLevel", label: "ชั้นปี", type: "number", required: true },
+      { name: "semester", label: "ภาคการศึกษา", type: "select", required: true, options: () => semesterOptions },
+      { name: "track", label: "Track", type: "select", options: () => trackOptions },
+      { name: "placeholder", label: "ข้อความแทนรายวิชา", helper: "เช่น วิชาเลือกเฉพาะด้าน 3 หน่วยกิต" },
+      { name: "credits", label: "หน่วยกิต", type: "number", required: true }
+    ]
+  },
+  {
+    key: "offerings",
+    step: "5",
+    label: "วิชาเปิดแต่ละเทอม",
+    title: "จัดการวิชาเปิดแต่ละเทอม",
+    goal: "บอกระบบว่าวิชาใดเปิดในเทอมใด เพื่อคาดการณ์วันจบได้ใกล้ความจริง",
+    description: "รองรับเทอม 1, เทอม 2 และเทอม 3/Summer ไม่จำกัดเฉพาะภาคฤดูร้อน",
+    checklist: ["เลือกวิชาที่เปิดสอน", "ระบุปีการศึกษา", "เลือกเทอม 1, 2 หรือ 3/Summer"],
+    defaults: {
+      courseCode: "",
+      academicYear: 2568,
+      semester: 1
+    },
+    fields: [
+      { name: "courseCode", label: "รายวิชา", type: "select", required: true, options: courseOptions },
+      { name: "academicYear", label: "ปีการศึกษา", type: "number", required: true },
+      { name: "semester", label: "ภาคการศึกษา", type: "select", required: true, options: () => semesterOptions }
+    ]
+  }
+];
+
+function programOptions(data: AdminData): SelectOption[] {
+  return [
+    { key: "program-empty", value: "", label: "เลือกหลักสูตร" },
+    ...data.programs.map((program) => {
+      const item = program as ProgramItem;
+      return { key: `program-${item.id}`, value: item.code, label: `${item.code} ${item.nameTh}` };
+    })
+  ];
+}
+
+function courseOptions(data: AdminData): SelectOption[] {
+  return [
+    { key: "course-empty", value: "", label: "เลือกรายวิชา" },
+    ...data.courses.map((course) => {
+      const item = course as CourseItem;
+      const programLabel = item.program?.code ?? "วิชากลาง";
+      return { key: `course-${item.id}`, value: item.code, label: `${item.code} ${item.nameTh} (${programLabel})` };
+    })
+  ];
+}
+
+export function AdminCrudPanel() {
+  const [activeKey, setActiveKey] = useState<ResourceKey>("programs");
+  const [data, setData] = useState<AdminData>(emptyData);
+  const [form, setForm] = useState<FormState>(resourceConfigs[0].defaults);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchText, setSearchText] = useState("");
+
+  const activeConfig = useMemo(
+    () => resourceConfigs.find((config) => config.key === activeKey) ?? resourceConfigs[0],
+    [activeKey]
+  );
+
+  const switchResource = useCallback((key: ResourceKey) => {
+    const config = resourceConfigs.find((item) => item.key === key) ?? resourceConfigs[0];
+    setActiveKey(key);
+    setForm(config.defaults);
+    setEditId(null);
+    setMessage("");
+    setSearchText("");
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const entries = await Promise.all(resourceConfigs.map(async (config) => {
+        const response = await fetch(`/api/admin/${config.key}`);
+        const payload = await response.json();
+        return [config.key, payload.items ?? []] as const;
+      }));
+      setData(Object.fromEntries(entries) as AdminData);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    setPayload(examples[resource]);
-    setEditId("");
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resource]);
+    void loadData();
+  }, [loadData]);
 
-  async function load() {
-    const response = await fetch(endpoint);
-    const data = await response.json();
-    setItems(data.items ?? []);
-    setMessage(data.success ? "" : data.error ?? "โหลดข้อมูลไม่สำเร็จ");
-  }
-
-  async function submit(method: "POST" | "PUT") {
-    setMessage("");
-    const url = method === "PUT" ? `${endpoint}/${editId}` : endpoint;
-    const response = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: payload
-    });
-    const data = await response.json();
-    setMessage(data.success ? "บันทึกสำเร็จ" : data.error ?? "บันทึกไม่สำเร็จ");
-    await load();
-  }
-
-  async function remove() {
-    if (!editId) {
-      setMessage("กรุณาใส่ id ที่ต้องการลบ");
-      return;
+  useEffect(() => {
+    function handleResourceChange(event: Event) {
+      const resource = (event as CustomEvent<string>).detail;
+      if (resourceConfigs.some((config) => config.key === resource)) {
+        switchResource(resource as ResourceKey);
+      }
     }
 
-    const response = await fetch(`${endpoint}/${editId}`, { method: "DELETE" });
-    const data = await response.json();
-    setMessage(data.success ? "ลบสำเร็จ" : data.error ?? "ลบไม่สำเร็จ");
-    await load();
+    window.addEventListener("admin-resource-change", handleResourceChange);
+    return () => window.removeEventListener("admin-resource-change", handleResourceChange);
+  }, [switchResource]);
+
+  const activeItems = data[activeKey];
+  const filteredItems = useMemo(() => {
+    const query = searchText.trim().toLowerCase();
+    if (!query) return activeItems;
+    return activeItems.filter((item) => {
+      const text = `${getItemTitle(activeKey, item)} ${getItemDescription(activeKey, item)}`.toLowerCase();
+      return text.includes(query);
+    });
+  }, [activeItems, activeKey, searchText]);
+
+  function updateField(name: string, value: string | number | boolean) {
+    setForm((current) => ({ ...current, [name]: value }));
+  }
+
+  async function submit() {
+    setIsLoading(true);
+    setMessage("");
+    const endpoint = editId ? `/api/admin/${activeKey}/${editId}` : `/api/admin/${activeKey}`;
+    const response = await fetch(endpoint, {
+      method: editId ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form)
+    });
+    const payload = await response.json();
+    setMessage(payload.success ? "บันทึกข้อมูลสำเร็จ" : payload.error ?? "บันทึกข้อมูลไม่สำเร็จ");
+    setIsLoading(false);
+
+    if (payload.success) {
+      resetForm();
+      await loadData();
+    }
+  }
+
+  async function remove(id: number) {
+    setIsLoading(true);
+    setMessage("");
+    const response = await fetch(`/api/admin/${activeKey}/${id}`, { method: "DELETE" });
+    const payload = await response.json();
+    setMessage(payload.success ? "ลบข้อมูลสำเร็จ" : payload.error ?? "ลบข้อมูลไม่สำเร็จ");
+    setIsLoading(false);
+
+    if (payload.success) {
+      await loadData();
+    }
+  }
+
+  function resetForm() {
+    setForm(activeConfig.defaults);
+    setEditId(null);
+  }
+
+  function startEdit(item: AdminItem) {
+    setForm(toFormState(activeKey, item));
+    setEditId(item.id);
+    setMessage("");
   }
 
   return (
-    <section className="surface p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="surface p-4" id="admin-management">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold">CRUD ข้อมูลหลักสูตรแบบถาวร</h2>
-          <p className="mt-1 text-sm text-slate-600">ทุก action เขียนลง PostgreSQL ผ่าน API admin</p>
+          <p className="text-sm font-semibold text-teal">Workflow editor</p>
+          <h2 className="mt-1 text-lg font-bold text-ink">จัดการข้อมูลหลักโดยไม่ต้องแก้ JSON</h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+            เลือกขั้นตอน กรอกข้อมูลในฟอร์ม แล้วบันทึก ข้อมูลเหล่านี้จะถูกใช้กับ student dashboard, graduation forecast และ what-if simulation
+          </p>
         </div>
-        <select className="rounded-md border border-line px-3 py-2 text-sm font-semibold" value={resource} onChange={(event) => setResource(event.target.value)}>
-          {resources.map((item) => <option key={item}>{item}</option>)}
-        </select>
+        <button className="rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold disabled:opacity-60" disabled={isLoading} onClick={loadData}>
+          โหลดข้อมูลใหม่
+        </button>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="grid gap-3">
-          <label className="text-sm font-semibold">
-            JSON payload
-            <textarea className="mt-2 h-56 w-full rounded-md border border-line p-3 font-mono text-xs" value={payload} onChange={(event) => setPayload(event.target.value)} />
-          </label>
-          <label className="text-sm font-semibold">
-            ID สำหรับแก้ไข/ลบ
-            <input className="mt-2 w-full rounded-md border border-line px-3 py-2" value={editId} onChange={(event) => setEditId(event.target.value)} />
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <button className="rounded-md bg-teal px-4 py-2 text-sm font-semibold text-white" onClick={() => submit("POST")}>Create</button>
-            <button className="rounded-md border border-line px-4 py-2 text-sm font-semibold" onClick={() => submit("PUT")}>Update</button>
-            <button className="rounded-md border border-coral px-4 py-2 text-sm font-semibold text-coral" onClick={remove}>Delete</button>
-            <button className="rounded-md border border-line px-4 py-2 text-sm font-semibold" onClick={load}>Refresh</button>
+      <div className="mt-4 grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+        {resourceConfigs.map((config) => (
+          <button
+            className={`rounded-md border px-3 py-2 text-left text-sm ${activeKey === config.key ? "border-teal bg-mist text-teal" : "border-line bg-white hover:bg-mist"}`}
+            key={config.key}
+            onClick={() => switchResource(config.key)}
+          >
+            <span className="block text-xs font-bold">ขั้นตอน {config.step}</span>
+            <span className="mt-1 block font-bold">{config.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-3 rounded-md border border-line bg-mist p-3 lg:grid-cols-[1fr_320px]">
+        <div>
+          <p className="text-sm font-bold text-teal">เป้าหมายขั้นตอน {activeConfig.step}</p>
+          <p className="mt-1 font-bold text-ink">{activeConfig.goal}</p>
+          <p className="mt-1 text-sm leading-6 text-slate-600">{activeConfig.description}</p>
+        </div>
+        <div className="rounded-md bg-white p-3">
+          <p className="text-sm font-bold text-ink">ควรกรอกให้ครบ</p>
+          <div className="mt-2 grid gap-1">
+            {activeConfig.checklist.map((item) => (
+              <p className="text-xs leading-5 text-slate-600" key={item}>{item}</p>
+            ))}
           </div>
-          {message ? <p className="rounded-md border border-line bg-mist p-3 text-sm">{message}</p> : null}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-md border border-line bg-white p-3">
+          <div>
+            <h3 className="font-bold text-ink">{activeConfig.title}</h3>
+            <p className="mt-1 text-sm leading-6 text-slate-600">กรอกช่องที่มี * ให้ครบก่อนบันทึก</p>
+          </div>
+
+          <div className="mt-4 grid gap-3">
+            {activeConfig.fields.map((field) => (
+              <FieldInput
+                data={data}
+                field={field}
+                key={field.name}
+                value={form[field.name]}
+                onChange={(value) => updateField(field.name, value)}
+              />
+            ))}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button className="rounded-md bg-teal px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" disabled={isLoading} onClick={submit}>
+              {editId ? "อัปเดตข้อมูล" : "เพิ่มข้อมูล"}
+            </button>
+            {editId ? (
+              <button className="rounded-md border border-line px-4 py-2 text-sm font-semibold" onClick={resetForm}>
+                ยกเลิกแก้ไข
+              </button>
+            ) : null}
+          </div>
+
+          {message ? <p className="mt-3 rounded-md border border-line bg-mist p-3 text-sm text-slate-700">{message}</p> : null}
         </div>
 
-        <div className="max-h-96 overflow-auto rounded-md border border-line bg-slate-950 p-3">
-          <pre className="whitespace-pre-wrap text-xs leading-5 text-slate-100">{JSON.stringify(items, null, 2)}</pre>
+        <div className="rounded-md border border-line bg-white">
+          <div className="grid gap-3 border-b border-line bg-mist px-3 py-2 md:grid-cols-[1fr_220px]">
+            <div>
+              <p className="font-semibold text-ink">รายการ{activeConfig.label}</p>
+              <p className="text-sm text-slate-500">แสดง {filteredItems.length}/{activeItems.length} รายการ</p>
+            </div>
+            <input
+              className="rounded-md border border-line px-3 py-2 text-sm"
+              placeholder="ค้นหา"
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+            />
+          </div>
+          <div className="max-h-[560px] overflow-auto p-3">
+            {filteredItems.length === 0 ? (
+              <p className="rounded-md bg-white p-3 text-sm text-slate-500">ยังไม่มีข้อมูลในขั้นตอนนี้</p>
+            ) : (
+              <div className="grid gap-2">
+                {filteredItems.map((item) => (
+                  <AdminListRow
+                    item={item}
+                    key={`${activeKey}-${item.id}`}
+                    resource={activeKey}
+                    onEdit={() => startEdit(item)}
+                    onRemove={() => remove(item.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>
   );
+}
+
+function FieldInput({
+  data,
+  field,
+  value,
+  onChange
+}: {
+  data: AdminData;
+  field: FieldConfig;
+  value: string | number | boolean | undefined;
+  onChange: (value: string | number | boolean) => void;
+}) {
+  if (field.type === "checkbox") {
+    return (
+      <label className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm font-semibold">
+        <input checked={Boolean(value)} type="checkbox" onChange={(event) => onChange(event.target.checked)} />
+        {field.label}
+      </label>
+    );
+  }
+
+  if (field.type === "select") {
+    return (
+      <label className="text-sm font-semibold">
+        {field.label}{field.required ? " *" : ""}
+        <select className="mt-2 w-full rounded-md border border-line px-3 py-2" value={String(value ?? "")} onChange={(event) => onChange(event.target.value)}>
+          {field.options?.(data).map((option) => (
+            <option key={option.key ?? `${field.name}-${String(option.value)}`} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+        {field.helper ? <span className="mt-1 block text-xs font-normal text-slate-500">{field.helper}</span> : null}
+      </label>
+    );
+  }
+
+  return (
+    <label className="text-sm font-semibold">
+      {field.label}{field.required ? " *" : ""}
+      <input
+        className="mt-2 w-full rounded-md border border-line px-3 py-2"
+        type={field.type ?? "text"}
+        value={String(value ?? "")}
+        onChange={(event) => onChange(field.type === "number" ? Number(event.target.value) : event.target.value)}
+      />
+      {field.helper ? <span className="mt-1 block text-xs font-normal text-slate-500">{field.helper}</span> : null}
+    </label>
+  );
+}
+
+function AdminListRow({
+  item,
+  resource,
+  onEdit,
+  onRemove
+}: {
+  item: AdminItem;
+  resource: ResourceKey;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-white p-3">
+      <div>
+        <p className="font-semibold text-ink">{getItemTitle(resource, item)}</p>
+        <p className="mt-1 text-sm leading-6 text-slate-600">{getItemDescription(resource, item)}</p>
+      </div>
+      <div className="flex gap-2">
+        <button className="rounded-md border border-line px-3 py-2 text-sm font-semibold" onClick={onEdit}>
+          แก้ไข
+        </button>
+        <button className="rounded-md border border-coral px-3 py-2 text-sm font-semibold text-coral" onClick={onRemove}>
+          ลบ
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function toFormState(resource: ResourceKey, item: AdminItem): FormState {
+  if (resource === "programs") {
+    const program = item as ProgramItem;
+    return {
+      code: program.code,
+      nameTh: program.nameTh,
+      nameEn: program.nameEn,
+      academicYear: program.academicYear,
+      totalCreditsMin: program.totalCreditsMin,
+      honorFirstClassMin: Number(program.honorFirstClassMin),
+      honorSecondClassMin: Number(program.honorSecondClassMin)
+    };
+  }
+
+  if (resource === "structures") {
+    const structure = item as ProgramStructureItem;
+    return {
+      programCode: structure.program.code,
+      category: structure.category,
+      minCredits: structure.minCredits,
+      description: structure.description ?? ""
+    };
+  }
+
+  if (resource === "courses") {
+    const course = item as CourseItem;
+    return {
+      programCode: course.program?.code ?? "",
+      code: course.code,
+      nameTh: course.nameTh,
+      nameEn: course.nameEn ?? "",
+      credits: course.credits,
+      category: course.category,
+      groupName: course.groupName ?? ""
+    };
+  }
+
+  if (resource === "prerequisites") {
+    const prerequisite = item as PrerequisiteItem;
+    return {
+      courseCode: prerequisite.course.code,
+      prereqCourseCode: prerequisite.prereqCourse.code,
+      isCorequisite: prerequisite.isCorequisite,
+      conditionNote: prerequisite.conditionNote ?? ""
+    };
+  }
+
+  if (resource === "study-plans") {
+    const plan = item as StudyPlanItem;
+    return {
+      programCode: plan.program.code,
+      courseCode: plan.course?.code ?? "",
+      yearLevel: plan.yearLevel,
+      semester: plan.semester,
+      track: plan.track ?? "",
+      placeholder: plan.placeholder ?? "",
+      credits: plan.credits
+    };
+  }
+
+  const offering = item as OfferingItem;
+  return {
+    courseCode: offering.course.code,
+    academicYear: offering.academicYear,
+    semester: offering.semester
+  };
+}
+
+function getItemTitle(resource: ResourceKey, item: AdminItem) {
+  if (resource === "programs") {
+    const program = item as ProgramItem;
+    return `${program.code} ${program.nameTh}`;
+  }
+  if (resource === "structures") {
+    const structure = item as ProgramStructureItem;
+    return `${structure.program.code} ${structure.category}`;
+  }
+  if (resource === "courses") {
+    const course = item as CourseItem;
+    return `${course.code} ${course.nameTh}`;
+  }
+  if (resource === "prerequisites") {
+    const prerequisite = item as PrerequisiteItem;
+    return `${prerequisite.course.code} ต้องผ่าน ${prerequisite.prereqCourse.code}`;
+  }
+  if (resource === "study-plans") {
+    const plan = item as StudyPlanItem;
+    return plan.course ? `${plan.course.code} ${plan.course.nameTh}` : plan.placeholder ?? "แถววางแผนแบบข้อความ";
+  }
+  const offering = item as OfferingItem;
+  return `${offering.course.code} ${offering.course.nameTh}`;
+}
+
+function getItemDescription(resource: ResourceKey, item: AdminItem) {
+  if (resource === "programs") {
+    const program = item as ProgramItem;
+    return `ปีหลักสูตร ${program.academicYear} | ขั้นต่ำ ${program.totalCreditsMin} หน่วยกิต`;
+  }
+  if (resource === "structures") {
+    const structure = item as ProgramStructureItem;
+    return `${structure.minCredits} หน่วยกิตขั้นต่ำ${structure.description ? ` | ${structure.description}` : ""}`;
+  }
+  if (resource === "courses") {
+    const course = item as CourseItem;
+    return `${course.program?.code ?? "วิชากลาง"} | ${course.credits} หน่วยกิต | ${course.category}`;
+  }
+  if (resource === "prerequisites") {
+    const prerequisite = item as PrerequisiteItem;
+    return `${prerequisite.isCorequisite ? "เรียนพร้อมกันได้" : "ต้องผ่านก่อน"}${prerequisite.conditionNote ? ` | ${prerequisite.conditionNote}` : ""}`;
+  }
+  if (resource === "study-plans") {
+    const plan = item as StudyPlanItem;
+    return `${plan.program.code} | ชั้นปี ${plan.yearLevel} | ${formatSemester(plan.semester)} | ${plan.track ?? "ทุก track"} | ${plan.credits} หน่วยกิต`;
+  }
+  const offering = item as OfferingItem;
+  return `ปีการศึกษา ${offering.academicYear} | ${formatSemester(offering.semester)}`;
+}
+
+function formatSemester(semester: number) {
+  return semester === 3 ? "เทอม 3 / Summer" : `เทอม ${semester}`;
 }

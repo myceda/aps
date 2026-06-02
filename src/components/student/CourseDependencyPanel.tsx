@@ -48,7 +48,7 @@ export function CourseDependencyPanel({ analysis }: { analysis: AnalysisResult }
             {analysis.courseDependencies.length === 0 ? (
               <tr>
                 <td className="px-3 py-4 text-slate-600" colSpan={6}>
-                  ยังไม่มีข้อมูล prerequisite ในหลักสูตรที่เลือก
+                  ยังไม่มีข้อมูลวิชาบังคับก่อนในหลักสูตรที่เลือก
                 </td>
               </tr>
             ) : (
@@ -73,7 +73,7 @@ export function CourseDependencyPanel({ analysis }: { analysis: AnalysisResult }
                   <td className="px-3 py-3 text-slate-700">
                     {item.plannedYear && item.plannedSemester
                       ? `ปี ${item.plannedYear} เทอม ${item.plannedSemester}`
-                      : "ยังไม่อยู่ใน study plan"}
+                      : "ยังไม่อยู่ในแผนการเรียน"}
                   </td>
                   <td className="px-3 py-3">
                     {item.isBlocking ? (

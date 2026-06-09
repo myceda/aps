@@ -1,9 +1,17 @@
+import Link from "next/link";
 import { Badge } from "@/components/shared/Badge";
 import { ProgressBar } from "@/components/shared/ProgressBar";
 import { StatCard } from "@/components/shared/StatCard";
 import type { AnalysisResult, RiskStatus } from "@/lib/types";
 
-export function DashboardSummary({ analysis }: { analysis: AnalysisResult }) {
+type DashboardSummaryProps = {
+  analysis: AnalysisResult;
+  onOpenRoadmap: () => void;
+  onOpenSimulator: () => void;
+  transcriptToolsHref: string;
+};
+
+export function DashboardSummary({ analysis, onOpenRoadmap, onOpenSimulator, transcriptToolsHref }: DashboardSummaryProps) {
   const proStatus = analysis.proStatus;
   const academicEligibility = analysis.academicEligibility;
   const trackRequirement = analysis.trackRequirement;
@@ -28,7 +36,7 @@ export function DashboardSummary({ analysis }: { analysis: AnalysisResult }) {
         </div>
       ) : null}
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-sm font-bold text-[#007a64]">Academic Eligibility จาก APS</p>
@@ -51,6 +59,21 @@ export function DashboardSummary({ analysis }: { analysis: AnalysisResult }) {
         <p className="mt-4 rounded-md border border-[#b7ddd8] bg-white px-3 py-2 text-xs font-semibold leading-5 text-slate-600">
           สถานะ REG ไม่ได้คำนวณจากระบบ APS แต่เป็นข้อมูลจากการยื่นจบกับกองบริหารงานวิชาการ
         </p>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 p-4">
+          <div>
+            <p className="font-extrabold text-amber-900">เริ่มจากตรวจข้อมูลผลการเรียนก่อน</p>
+            <p className="mt-1 text-sm leading-6 text-amber-800">
+              ถ้า transcript อ่านไม่ครบ หรือเลือกหลักสูตร/สายผิด ผลคาดการณ์วันจบและรายวิชาที่เหลือจะผิดตามไปด้วย
+            </p>
+          </div>
+          <Link
+            className="rounded-md bg-[#f59e0b] px-4 py-2 text-sm font-extrabold text-white hover:bg-[#d98706]"
+            href={transcriptToolsHref}
+          >
+            จัดการข้อมูลผลการเรียน
+          </Link>
+        </div>
 
         {academicEligibility.pendingCourseCodes.length > 0 ? (
           <p className="mt-3 text-xs font-bold text-amber-700">
@@ -114,6 +137,175 @@ export function DashboardSummary({ analysis }: { analysis: AnalysisResult }) {
             <ProgressBar value={analysis.earnedCredits} max={analysis.totalCreditsMin} />
           </div>
         </div>
+      </div>
+
+      <RemainingCoursesSection analysis={analysis} />
+      <BlockedCoursesSection analysis={analysis} />
+      <RoadmapPreview analysis={analysis} onOpenRoadmap={onOpenRoadmap} />
+      <WhatIfEntry onOpenSimulator={onOpenSimulator} />
+    </section>
+  );
+}
+
+function RemainingCoursesSection({ analysis }: { analysis: AnalysisResult }) {
+  const remainingCourses = analysis.courseStatuses
+    .filter((course) => course.status === "not_taken" || course.status === "failed" || course.status === "withdrawn" || course.status === "incomplete")
+    .slice(0, 10);
+
+  return (
+    <section className="rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-bold text-[#007a64]">รายวิชาที่เหลือ</p>
+          <h2 className="mt-1 text-xl font-extrabold text-slate-900">ยังต้องจัดการวิชาไหนบ้าง</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            รวมวิชาที่ยังไม่พบใน transcript, ยังไม่ผ่าน, ถอน, หรือรอผลเกรด I
+          </p>
+        </div>
+        <Badge status={remainingCourses.length > 0 ? "watch" : "normal"}>
+          {remainingCourses.length > 0 ? `${remainingCourses.length} รายการ` : "ไม่พบวิชาค้าง"}
+        </Badge>
+      </div>
+
+      {remainingCourses.length > 0 ? (
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {remainingCourses.map((course) => (
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={course.courseCode}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-extrabold text-slate-900">{course.courseCode}</p>
+                  <p className="mt-1 text-sm leading-5 text-slate-700">{course.courseName}</p>
+                </div>
+                <span className="rounded-md bg-white px-2 py-1 text-xs font-bold text-slate-600">{course.credits} หน่วยกิต</span>
+              </div>
+              <p className="mt-2 text-xs font-bold text-[#007a64]">{formatCourseStatus(course.status)}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{course.reason}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-md border border-[#b7ddd8] bg-[#effaf8] p-3 text-sm font-semibold text-[#007a64]">
+          ไม่พบรายวิชาค้างจากข้อมูลที่ยืนยันแล้ว
+        </p>
+      )}
+    </section>
+  );
+}
+
+function BlockedCoursesSection({ analysis }: { analysis: AnalysisResult }) {
+  const prerequisiteBlocks = analysis.courseDependencies.filter((dependency) => dependency.isBlocking).slice(0, 8);
+  const forecastBlocks = analysis.graduationForecast.blockedCourses.slice(0, 8);
+  const hasBlocks = prerequisiteBlocks.length > 0 || forecastBlocks.length > 0;
+
+  return (
+    <section className="rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-bold text-[#007a64]">วิชาที่ถูก block</p>
+          <h2 className="mt-1 text-xl font-extrabold text-slate-900">มี prerequisite ขวางการลงวิชาไหม</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            ถ้ามีวิชาถูก block ต้องผ่านวิชาบังคับก่อน หรือรอข้อมูลวิชาเปิดสอนให้ครบก่อนวางแผนจบ
+          </p>
+        </div>
+        <Badge status={hasBlocks ? "urgent" : "normal"}>{hasBlocks ? "ต้องตรวจ" : "ไม่พบ block"}</Badge>
+      </div>
+
+      {hasBlocks ? (
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {prerequisiteBlocks.map((dependency) => (
+            <div className="rounded-md border border-red-200 bg-red-50 p-3" key={`${dependency.courseCode}-${dependency.prerequisiteCode}`}>
+              <p className="text-sm font-extrabold text-red-800">{dependency.courseCode} ถูก block</p>
+              <p className="mt-1 text-sm leading-6 text-red-700">
+                ต้องผ่าน {dependency.prerequisiteCode} ก่อน จึงควรวางลำดับเรียนใหม่
+              </p>
+            </div>
+          ))}
+
+          {forecastBlocks.map((course) => (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3" key={course.courseCode}>
+              <p className="text-sm font-extrabold text-amber-900">{course.courseCode} ยังวางลงแผนไม่ได้</p>
+              <p className="mt-1 text-sm leading-6 text-amber-800">{course.reason}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-md border border-[#b7ddd8] bg-[#effaf8] p-3 text-sm font-semibold text-[#007a64]">
+          ยังไม่พบวิชาที่ติด prerequisite จากข้อมูลปัจจุบัน
+        </p>
+      )}
+    </section>
+  );
+}
+
+function RoadmapPreview({ analysis, onOpenRoadmap }: { analysis: AnalysisResult; onOpenRoadmap: () => void }) {
+  const plannedTerms = analysis.graduationForecast.terms.slice(0, 3);
+
+  return (
+    <section className="rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-bold text-[#007a64]">Roadmap รายเทอม</p>
+          <h2 className="mt-1 text-xl font-extrabold text-slate-900">แผนต่อจากนี้ควรไปทางไหน</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            แสดงเทอมถัดไปแบบย่อ ถ้าต้องดูทุกปีให้เปิดแผน 8 ปี
+          </p>
+        </div>
+        <button
+          className="rounded-md border border-[#007a64] px-4 py-2 text-sm font-extrabold text-[#007a64] hover:bg-[#effaf8]"
+          onClick={onOpenRoadmap}
+          type="button"
+        >
+          ดูแผน 8 ปี
+        </button>
+      </div>
+
+      {plannedTerms.length > 0 ? (
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          {plannedTerms.map((term) => (
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3" key={`${term.academicYear}-${term.semester}`}>
+              <p className="font-extrabold text-slate-900">
+                {formatForecastTerm(term.academicYear, term.semester)}
+              </p>
+              <p className="mt-1 text-xs font-bold text-slate-500">
+                {term.plannedCredits}/{term.creditLimit} หน่วยกิต
+              </p>
+              <div className="mt-3 grid gap-2">
+                {term.courses.slice(0, 4).map((course) => (
+                  <p className="rounded bg-white px-2 py-1 text-xs font-semibold text-slate-700" key={course.courseCode}>
+                    {course.courseCode} {course.courseName}
+                  </p>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-md border border-[#b7ddd8] bg-[#effaf8] p-3 text-sm font-semibold text-[#007a64]">
+          ตอนนี้ยังไม่มีวิชาที่ต้องจัดลงเทอมใหม่ หรือข้อมูลยังไม่พอสำหรับวาง roadmap
+        </p>
+      )}
+    </section>
+  );
+}
+
+function WhatIfEntry({ onOpenSimulator }: { onOpenSimulator: () => void }) {
+  return (
+    <section className="rounded-md border border-[#b7ddd8] bg-[#effaf8] p-5 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-bold text-[#007a64]">What-if Simulation</p>
+          <h2 className="mt-1 text-xl font-extrabold text-slate-900">ลองก่อนตัดสินใจจริง</h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+            ใช้จำลองผลจากการถอนวิชา ลงวิชาเพิ่ม หรือไม่ผ่าน prerequisite แล้วดูว่าเทอมจบและวิชาที่ถูก block เปลี่ยนอย่างไร
+          </p>
+        </div>
+        <button
+          className="rounded-md bg-[#007a64] px-5 py-3 text-sm font-extrabold text-white hover:bg-[#006855]"
+          onClick={onOpenSimulator}
+          type="button"
+        >
+          เปิด What-if
+        </button>
       </div>
     </section>
   );

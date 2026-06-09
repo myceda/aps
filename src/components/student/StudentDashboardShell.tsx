@@ -178,7 +178,14 @@ export function StudentDashboardShell({ analysis, programCode, userName, userEma
 
       <SectionHeading title={activeMeta.title} detail={activeMeta.detail} />
 
-      {activeView === "summary" ? <DashboardSummary analysis={analysis} /> : null}
+      {activeView === "summary" ? (
+        <DashboardSummary
+          analysis={analysis}
+          onOpenRoadmap={() => setActiveView("roadmap")}
+          onOpenSimulator={() => setActiveView("simulator")}
+          transcriptToolsHref={transcriptToolsHref}
+        />
+      ) : null}
       {activeView === "forecast" ? <GraduationForecastPanel analysis={analysis} /> : null}
       {activeView === "roadmap" ? <EightYearStudyPlanDiagram analysis={analysis} /> : null}
       {activeView === "simulator" ? <GraduationWhatIfPanel analysis={analysis} ownerEmail={userEmail} programCode={programCode} /> : null}

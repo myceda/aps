@@ -25,21 +25,29 @@ const scenarioOptions: Array<{
   value: ScenarioType;
   title: string;
   description: string;
+  question: string;
+  impactLabel: string;
 }> = [
   {
     value: "withdraw",
     title: "ถอนรายวิชา",
-    description: "ดูผลกระทบถ้าถอนวิชาที่อยู่ในแผน"
+    description: "ใช้เมื่อต้องตัดสินใจว่าจะถอนวิชานี้ดีไหม",
+    question: "ถ้าถอนวิชานี้ จะทำให้จบช้าลงหรือ block วิชาอื่นเพิ่มไหม",
+    impactLabel: "ดูผลกระทบจากการถอน"
   },
   {
     value: "add",
     title: "ลงเพิ่ม",
-    description: "ลองเพิ่มวิชาที่เปิดสอนในปี/เทอมนี้"
+    description: "ใช้เมื่อต้องลองเร่งแผนด้วยวิชาที่เปิดสอน",
+    question: "ถ้าลงวิชานี้เพิ่ม จะปลดล็อกวิชาต่อไปหรือทำให้จบเร็วขึ้นไหม",
+    impactLabel: "ดูผลกระทบจากการลงเพิ่ม"
   },
   {
     value: "fail",
-    title: "ไม่ผ่านตัวต่อ",
-    description: "จำลอง F/I ของวิชาที่เป็น prerequisite"
+    title: "ไม่ผ่านวิชา",
+    description: "ใช้ดูความเสี่ยงถ้าวิชานี้ไม่ผ่านหรือต้องรอผล",
+    question: "ถ้าวิชานี้ไม่ผ่าน จะทำให้วิชาไหนเรียนต่อไม่ได้และเลื่อนจบกี่เทอม",
+    impactLabel: "ดูผลกระทบจากการไม่ผ่าน"
   }
 ];
 
@@ -56,6 +64,7 @@ export function GraduationWhatIfPanel({ analysis, ownerEmail, programCode }: Pro
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingOfferings, setIsLoadingOfferings] = useState(false);
+  const activeScenario = scenarioOptions.find((option) => option.value === scenarioType) ?? scenarioOptions[0];
 
   const completedCourses = useMemo(
     () => analysis.courseStatuses.filter((course) => course.status === "passed" || course.status === "non_credit"),
@@ -171,7 +180,7 @@ export function GraduationWhatIfPanel({ analysis, ownerEmail, programCode }: Pro
 
       <div className="grid gap-5 bg-[#f6f8fa] p-5 xl:grid-cols-[420px_1fr]">
         <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
-          <p className="text-sm font-extrabold text-slate-500">1. เลือกประเภทผลกระทบ</p>
+          <p className="text-sm font-extrabold text-slate-500">เลือกเรื่องที่อยากตัดสินใจ</p>
           <div className="mt-3 grid gap-2">
             {scenarioOptions.map((option) => {
               const selected = scenarioType === option.value;
@@ -189,9 +198,17 @@ export function GraduationWhatIfPanel({ analysis, ownerEmail, programCode }: Pro
                 >
                   <span className="block text-sm font-extrabold">{option.title}</span>
                   <span className="mt-1 block text-xs leading-5 text-slate-500">{option.description}</span>
+                  <span className="mt-2 block rounded-md bg-white/70 px-2 py-1 text-xs font-bold leading-5 text-slate-600">
+                    {option.question}
+                  </span>
                 </button>
               );
             })}
+          </div>
+
+          <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm leading-6 text-[#006854]">
+            <span className="font-extrabold">ระบบจะตอบ:</span> เทอมจบเดิมเทียบกับเทอมจบใหม่ ช้ากี่เทอม วิชาที่ถูก block
+            และคำแนะนำว่าควรวางแผนต่ออย่างไร
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -292,7 +309,7 @@ export function GraduationWhatIfPanel({ analysis, ownerEmail, programCode }: Pro
             onClick={runSimulation}
             type="button"
           >
-            {isLoading ? "กำลังจำลองแผน..." : "คำนวณผลกระทบของแผนนี้"}
+            {isLoading ? "กำลังจำลองแผน..." : activeScenario.impactLabel}
           </button>
           {message ? <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">{message}</p> : null}
         </div>
@@ -336,12 +353,20 @@ function SimulationResultPanel({ result }: { result: WhatIfSimulationResult | nu
     return (
       <div className="rounded-lg border border-dashed border-line bg-white p-5 shadow-sm">
         <p className="text-sm font-extrabold text-slate-500">ผลลัพธ์หลังจำลอง</p>
-        <h3 className="mt-2 text-2xl font-extrabold text-ink">เลือกเงื่อนไขแล้วกดคำนวณ</h3>
-        <div className="mt-6 grid gap-3 md:grid-cols-4">
-          {["คำนวณแผนเดิม", "สร้างแผนจำลอง", "ตรวจ prerequisite/วิชาเปิด", "สรุปผลกระทบ"].map((step, index) => (
-            <div className="rounded-lg border border-line bg-slate-50 p-4" key={step}>
-              <p className="text-2xl font-extrabold text-[#007a64]">{index + 1}</p>
-              <p className="mt-2 text-sm font-bold leading-6 text-slate-700">{step}</p>
+        <h3 className="mt-2 text-2xl font-extrabold text-ink">เลือกสถานการณ์แล้วกดคำนวณ</h3>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+          หน้านี้จะไม่บันทึกข้อมูลลงฐานข้อมูล เป็นพื้นที่ทดลองเพื่อดูว่าแผนที่กำลังคิดอยู่กระทบวันจบและรายวิชาต่อเนื่องอย่างไร
+        </p>
+        <div className="mt-6 grid gap-3 md:grid-cols-2">
+          {[
+            ["เทอมจบเดิม vs เทอมจบใหม่", "เห็นทันทีว่าแผนนี้ทำให้จบช้า เร็ว หรือเท่าเดิม"],
+            ["วิชาที่ block / เรียนต่อได้", "ดู prerequisite และวิชาที่เปิดสอนก่อนตัดสินใจจริง"],
+            ["คำแนะนำภาษาคน", "ระบบสรุปว่าควรระวังอะไรและควรวางแผนต่ออย่างไร"],
+            ["ไม่กระทบข้อมูลจริง", "ผลจำลองเป็น temporary state ใช้ประกอบการตัดสินใจเท่านั้น"]
+          ].map(([title, description]) => (
+            <div className="rounded-lg border border-line bg-slate-50 p-4" key={title}>
+              <p className="text-sm font-extrabold text-[#007a64]">{title}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
             </div>
           ))}
         </div>
@@ -349,18 +374,20 @@ function SimulationResultPanel({ result }: { result: WhatIfSimulationResult | nu
     );
   }
 
-  const delayText = result.graduationDelayTerms === null ? "ยังเทียบไม่ได้" : `${result.graduationDelayTerms} เทอม`;
+  const delayText = formatDelayTerms(result.graduationDelayTerms);
 
   return (
     <div className="grid gap-4">
+      <DecisionSummary result={result} />
+
       <div className="rounded-lg border border-line bg-white p-5 shadow-sm">
-        <p className="text-sm font-extrabold text-[#007a64]">สรุปผลกระทบ</p>
+        <p className="text-sm font-extrabold text-[#007a64]">รายละเอียดผลกระทบ</p>
         <h3 className="mt-2 text-2xl font-extrabold text-ink">{result.summary}</h3>
         <div className="mt-5 grid gap-3 md:grid-cols-4">
-          <MetricCard label="จบช้ากว่าเดิม" value={delayText} tone={result.graduationDelayTerms && result.graduationDelayTerms > 0 ? "warn" : "ok"} />
-          <MetricCard label="วิชาที่ปลดล็อก" value={`${result.unlockedCourses.length} วิชา`} tone="ok" />
-          <MetricCard label="วิชาที่ block เพิ่ม" value={`${result.newlyBlockedCourses.length} วิชา`} tone={result.newlyBlockedCourses.length > 0 ? "warn" : "ok"} />
-          <MetricCard label="สถานะแผนจำลอง" value={result.simulatedForecast.canGraduate ? "จัดแผนจบได้" : "ยังไม่พร้อมจบ"} tone={result.simulatedForecast.canGraduate ? "ok" : "warn"} />
+          <MetricCard label="ช้ากี่เทอม" value={delayText} tone={result.graduationDelayTerms && result.graduationDelayTerms > 0 ? "warn" : "ok"} />
+          <MetricCard label="ยังเรียนต่อได้" value={`${result.unlockedCourses.length} วิชา`} tone="ok" />
+          <MetricCard label="ถูก block เพิ่ม" value={`${result.newlyBlockedCourses.length} วิชา`} tone={result.newlyBlockedCourses.length > 0 ? "warn" : "ok"} />
+          <MetricCard label="สถานะแผนจำลอง" value={result.simulatedForecast.canGraduate ? "จัดแผนจบได้" : "ยังจัดไม่จบ"} tone={result.simulatedForecast.canGraduate ? "ok" : "warn"} />
         </div>
       </div>
 
@@ -390,6 +417,39 @@ function SimulationResultPanel({ result }: { result: WhatIfSimulationResult | nu
   );
 }
 
+function DecisionSummary({ result }: { result: WhatIfSimulationResult }) {
+  const delayTone = result.graduationDelayTerms && result.graduationDelayTerms > 0 ? "warn" : "ok";
+
+  return (
+    <div className="rounded-lg border border-[#007a64]/25 bg-white p-5 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-extrabold text-[#007a64]">คำตอบสำหรับการตัดสินใจ</p>
+          <h3 className="mt-2 text-2xl font-extrabold text-ink">{buildDecisionAdvice(result)}</h3>
+        </div>
+        <Badge status={delayTone === "warn" ? "watch" : "normal"}>{formatDelayTerms(result.graduationDelayTerms)}</Badge>
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="rounded-lg border border-line bg-slate-50 p-4">
+          <p className="text-xs font-extrabold text-slate-500">เทอมจบเดิม</p>
+          <p className="mt-2 text-lg font-extrabold text-ink">{formatForecastOutcome(result.baselineForecast)}</p>
+        </div>
+        <div className="rounded-lg border border-line bg-slate-50 p-4">
+          <p className="text-xs font-extrabold text-slate-500">เทอมจบใหม่</p>
+          <p className="mt-2 text-lg font-extrabold text-ink">{formatForecastOutcome(result.simulatedForecast)}</p>
+        </div>
+        <div className={`rounded-lg border p-4 ${delayTone === "warn" ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"}`}>
+          <p className="text-xs font-extrabold text-slate-500">ผลกระทบหลัก</p>
+          <p className={`mt-2 text-lg font-extrabold ${delayTone === "warn" ? "text-[#b45309]" : "text-[#007a64]"}`}>
+            {formatDelayTerms(result.graduationDelayTerms)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MetricCard({ label, value, tone }: { label: string; value: string; tone: "ok" | "warn" }) {
   return (
     <div className={`rounded-lg border p-4 ${tone === "ok" ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
@@ -400,10 +460,7 @@ function MetricCard({ label, value, tone }: { label: string; value: string; tone
 }
 
 function ForecastCompareCard({ title, forecast }: { title: string; forecast: WhatIfSimulationResult["baselineForecast"] }) {
-  const expectedTerm =
-    forecast.canGraduate && forecast.expectedAcademicYear && forecast.expectedSemester
-      ? `ปีการศึกษา ${forecast.expectedAcademicYear} ${formatSemester(forecast.expectedSemester)}`
-      : "ยังจัดแผนจนจบไม่ได้";
+  const expectedTerm = formatForecastOutcome(forecast);
 
   return (
     <div className="rounded-lg border border-line bg-white p-4 shadow-sm">
@@ -414,6 +471,42 @@ function ForecastCompareCard({ title, forecast }: { title: string; forecast: Wha
       </p>
     </div>
   );
+}
+
+function formatForecastOutcome(forecast: WhatIfSimulationResult["baselineForecast"]) {
+  if (!forecast.canGraduate || !forecast.expectedAcademicYear || !forecast.expectedSemester) {
+    return "ยังจัดแผนจนจบไม่ได้";
+  }
+
+  const semesterLabel = forecast.expectedSemester === 3 ? "เทอม 3/ฤดูร้อน" : `เทอม ${forecast.expectedSemester}`;
+  return `จบได้${semesterLabel}/${forecast.expectedAcademicYear}`;
+}
+
+function formatDelayTerms(delayTerms: number | null) {
+  if (delayTerms === null) return "ยังเทียบไม่ได้";
+  if (delayTerms === 0) return "ไม่ช้าลง";
+  if (delayTerms > 0) return `ช้าลง ${delayTerms} เทอม`;
+  return `เร็วขึ้น ${Math.abs(delayTerms)} เทอม`;
+}
+
+function buildDecisionAdvice(result: WhatIfSimulationResult) {
+  if (!result.simulatedForecast.canGraduate) {
+    return "แผนนี้ยังไม่ควรใช้จริง เพราะระบบยังจัดรายวิชาจนจบไม่ได้";
+  }
+
+  if (result.graduationDelayTerms && result.graduationDelayTerms > 0) {
+    return "แผนนี้ทำให้จบช้าลง ควรมีแผนสำรองก่อนตัดสินใจ";
+  }
+
+  if (result.newlyBlockedCourses.length > 0) {
+    return "แผนนี้ยังจบได้ แต่ต้องระวังวิชาที่ถูก block เพิ่ม";
+  }
+
+  if (result.unlockedCourses.length > 0) {
+    return "แผนนี้ช่วยให้มีวิชาที่เรียนต่อได้เพิ่มขึ้น";
+  }
+
+  return "แผนนี้ไม่ทำให้เทอมจบเปลี่ยน ใช้ประกอบการตัดสินใจได้";
 }
 
 function CourseList({
@@ -456,10 +549,6 @@ function dedupeOfferings(offerings: OfferingOption[]) {
 
 function extractCourseCode(value: string) {
   return value.trim().split(/\s+/)[0] ?? "";
-}
-
-function formatSemester(semester: number) {
-  return semester === 3 ? "เทอม 3 / ฤดูร้อน" : `เทอม ${semester}`;
 }
 
 function getDefaultAcademicYear(analysis: AnalysisResult) {

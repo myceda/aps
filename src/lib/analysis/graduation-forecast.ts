@@ -15,6 +15,7 @@ type ForecastData = {
   prerequisites?: PrerequisiteRule[];
   studyPlan?: StudyPlanItem[];
   courseOfferings?: CourseOffering[];
+  summerOfferings?: Set<string>;
   transcriptCourses?: TranscriptCourse[];
   transcriptSummaries?: TranscriptSummary[];
 };
@@ -45,6 +46,7 @@ export function buildGraduationForecast(
   const prerequisites = data.prerequisites ?? [];
   const studyPlan = data.studyPlan ?? [];
   const courseOfferings = data.courseOfferings ?? [];
+  const summerOfferings = data.summerOfferings ?? new Set<string>();
   const regularCreditLimit = options.regularCreditLimit ?? DEFAULT_REGULAR_CREDIT_LIMIT;
   const summerCreditLimit = options.summerCreditLimit ?? DEFAULT_SUMMER_CREDIT_LIMIT;
   const maxTerms = (options.maxYearsToPlan ?? DEFAULT_MAX_YEARS_TO_PLAN) * SUPPORTED_SEMESTERS.length;
@@ -94,7 +96,7 @@ export function buildGraduationForecast(
         continue;
       }
 
-      if (!isCourseOfferedInTerm(course.courseCode, currentTerm, programCode, studyPlan, courseOfferings)) {
+      if (!isCourseOfferedInTerm(course.courseCode, currentTerm, programCode, studyPlan, courseOfferings, summerOfferings)) {
         continue;
       }
 
@@ -160,7 +162,8 @@ function isCourseOfferedInTerm(
   term: AcademicTerm,
   programCode: ProgramCode,
   studyPlan: StudyPlanItem[],
-  courseOfferings: CourseOffering[]
+  courseOfferings: CourseOffering[],
+  summerOfferings: Set<string>
 ) {
   const offeringsForCourse = courseOfferings.filter((offering) => offering.courseCode === courseCode);
   if (offeringsForCourse.length > 0) {
@@ -169,6 +172,10 @@ function isCourseOfferedInTerm(
         offering.semester === term.semester &&
         (offering.academicYear === term.academicYear || offering.academicYear <= term.academicYear)
     );
+  }
+
+  if (term.semester === 3 && summerOfferings.has(courseCode)) {
+    return true;
   }
 
   const plannedSemesters = getPlannedSemesters(programCode, studyPlan, courseCode);

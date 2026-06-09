@@ -12,7 +12,7 @@ import type { AnalysisData } from "@/lib/db/repository";
 
 type WhatIfData = Pick<
   AnalysisData,
-  "prerequisites" | "studyPlan" | "courseOfferings" | "transcriptCourses" | "transcriptSummaries"
+  "prerequisites" | "studyPlan" | "courseOfferings" | "summerOfferings" | "transcriptCourses" | "transcriptSummaries"
 >;
 
 export function simulateGraduationWhatIf(

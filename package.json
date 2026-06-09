@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:curriculum": "tsx scripts/verify-curriculum-master-data.ts",
+    "test:forecast": "tsx scripts/verify-graduation-forecast.ts",
     "test:transcript": "tsx scripts/verify-transcript-pipeline.ts",
     "test:eligibility": "tsx scripts/verify-academic-reg-separation.ts",
     "test:golden": "tsx scripts/verify-golden-cases.ts",

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { AdminCrudPanel, type ResourceKey } from "@/components/admin/AdminCrudPanel";
+import { AdminPublishPanel } from "@/components/admin/AdminPublishPanel";
 import type { AdminStepKey } from "@/components/admin/AdminMenu";
 import { AcademicAppShell } from "@/components/shared/AcademicAppShell";
 
@@ -19,6 +20,7 @@ const workflowSteps: Array<{
   shortTitle: string;
   detail: string;
   resource?: ResourceKey;
+  secondaryResource?: ResourceKey;
 }> = [
   {
     key: "overview",
@@ -37,23 +39,16 @@ const workflowSteps: Array<{
   {
     key: "programs",
     resource: "programs",
+    secondaryResource: "structures",
     step: "3",
     title: "จัดการหลักสูตร",
     shortTitle: "หลักสูตร",
-    detail: "กำหนดรหัสหลักสูตร ปีหลักสูตร หน่วยกิตรวม และเกณฑ์ GPAX ที่ใช้วิเคราะห์"
-  },
-  {
-    key: "structures",
-    resource: "structures",
-    step: "4",
-    title: "จัดการโครงสร้างหลักสูตร",
-    shortTitle: "โครงสร้าง",
-    detail: "กำหนดหมวดวิชาและหน่วยกิตขั้นต่ำของแต่ละหมวดในหลักสูตร"
+    detail: "กำหนดรหัสหลักสูตร ปีหลักสูตร หน่วยกิตรวม และหมวดหน่วยกิตขั้นต่ำที่ใช้ตรวจว่าเรียนครบหลักสูตรหรือยัง"
   },
   {
     key: "courses",
     resource: "courses",
-    step: "5",
+    step: "4",
     title: "จัดการรายวิชา",
     shortTitle: "รายวิชา",
     detail: "เพิ่มหรือแก้ไขรหัสวิชา ชื่อวิชา หน่วยกิต หมวดวิชา และหลักสูตรที่เกี่ยวข้อง"
@@ -61,7 +56,7 @@ const workflowSteps: Array<{
   {
     key: "prerequisites",
     resource: "prerequisites",
-    step: "6",
+    step: "5",
     title: "จัดการวิชาบังคับก่อน",
     shortTitle: "Prerequisite",
     detail: "กำหนดความสัมพันธ์ของรายวิชา เพื่อให้ระบบรู้ว่าวิชาใดปลดล็อกหรือขวางการเรียนต่อ"
@@ -69,7 +64,7 @@ const workflowSteps: Array<{
   {
     key: "study-plans",
     resource: "study-plans",
-    step: "7",
+    step: "6",
     title: "จัดการแผนรายเทอม",
     shortTitle: "Study Plan",
     detail: "วางรายวิชาเป็นปีและเทอม แยกแผน RESEARCH และ COOP เพื่อใช้คาดการณ์วันจบ"
@@ -77,10 +72,17 @@ const workflowSteps: Array<{
   {
     key: "offerings",
     resource: "offerings",
-    step: "8",
+    step: "7",
     title: "จัดการวิชาที่เปิดสอน",
     shortTitle: "วิชาเปิดสอน",
     detail: "ระบุว่าวิชาใดเปิดในเทอม 1 เทอม 2 หรือภาคฤดูร้อนของแต่ละปีการศึกษา"
+  },
+  {
+    key: "publish",
+    step: "8",
+    title: "Publish",
+    shortTitle: "Publish",
+    detail: "ตรวจผลสุดท้ายว่าอะไรครบ อะไรยังขาด อะไรผิด และพร้อมเปิดให้นักศึกษาใช้หรือยัง"
   }
 ];
 
@@ -114,7 +116,7 @@ export function AdminDashboardShell({ importPanel, readinessPanel }: AdminDashbo
             <button
               className={`mb-2 flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm font-bold transition ${
                 isActive
-                  ? "bg-gradient-to-r from-[#007a64] to-[#29a99a] text-white shadow-md"
+                  ? "bg-[#007a64] text-white shadow-md"
                   : "text-slate-600 hover:bg-slate-50 hover:text-[#007a64]"
               }`}
               key={step.key}
@@ -178,8 +180,20 @@ export function AdminDashboardShell({ importPanel, readinessPanel }: AdminDashbo
       ) : null}
 
       {activeWorkflowStep.resource ? (
-        <AdminCrudPanel activeResource={activeWorkflowStep.resource} showResourceTabs={false} />
+        <div className="grid gap-5">
+          <AdminCrudPanel activeResource={activeWorkflowStep.resource} showResourceTabs={false} />
+          {activeWorkflowStep.secondaryResource ? (
+            <AdminCrudPanel activeResource={activeWorkflowStep.secondaryResource} showResourceTabs={false} />
+          ) : null}
+          <NextWorkflowAction
+            detail={getNextStepDetail(activeStep)}
+            label={getNextStepLabel(activeStep)}
+            onClick={() => setActiveStep(getNextStep(activeStep))}
+          />
+        </div>
       ) : null}
+
+      {activeStep === "publish" ? <AdminPublishPanel /> : null}
     </AcademicAppShell>
   );
 }
@@ -197,6 +211,23 @@ function NextWorkflowAction({ detail, label, onClick }: { detail: string; label:
       </button>
     </div>
   );
+}
+
+function getNextStep(currentStep: AdminStepKey): AdminStepKey {
+  const index = workflowSteps.findIndex((step) => step.key === currentStep);
+  return workflowSteps[Math.min(index + 1, workflowSteps.length - 1)]?.key ?? "publish";
+}
+
+function getNextStepLabel(currentStep: AdminStepKey) {
+  const nextStep = workflowSteps.find((step) => step.key === getNextStep(currentStep));
+  return nextStep ? `ไป Step ${nextStep.step}: ${nextStep.shortTitle}` : "ไปขั้นตอนถัดไป";
+}
+
+function getNextStepDetail(currentStep: AdminStepKey) {
+  if (currentStep === "offerings") {
+    return "เมื่อกำหนดวิชาที่เปิดสอนครบแล้ว ให้ไปตรวจผล publish เพื่อดูว่าระบบพร้อมเปิดให้นักศึกษาใช้หรือยัง";
+  }
+  return "หลังบันทึกข้อมูลในขั้นตอนนี้ ให้ทำขั้นตอนถัดไปตามลำดับเพื่อให้ข้อมูลหลักสูตรครบทั้งเส้นทาง";
 }
 
 function TranscriptCasePanel() {

@@ -4,11 +4,11 @@ export type AdminStepKey =
   | "overview"
   | "import"
   | "programs"
-  | "structures"
   | "courses"
   | "prerequisites"
   | "study-plans"
-  | "offerings";
+  | "offerings"
+  | "publish";
 
 const menu: Array<{
   step: string;
@@ -32,37 +32,37 @@ const menu: Array<{
     step: "3",
     key: "programs",
     label: "จัดการหลักสูตร",
-    detail: "ชื่อหลักสูตร ปีหลักสูตร หน่วยกิตรวม และเกณฑ์ GPAX"
+    detail: "ชื่อหลักสูตร ปีหลักสูตร หน่วยกิตรวม และหมวดหน่วยกิตขั้นต่ำ"
   },
   {
     step: "4",
-    key: "structures",
-    label: "จัดการโครงสร้างหลักสูตร",
-    detail: "หมวดวิชาและหน่วยกิตขั้นต่ำของแต่ละหมวด"
-  },
-  {
-    step: "5",
     key: "courses",
     label: "จัดการรายวิชา",
     detail: "รหัสวิชา ชื่อวิชา หน่วยกิต และหมวดวิชา"
   },
   {
-    step: "6",
+    step: "5",
     key: "prerequisites",
     label: "วิชาบังคับก่อน / วิชาตัวต่อ",
     detail: "กำหนดวิชาที่ต้องผ่านก่อนและวิชาที่เรียนพร้อมกันได้"
   },
   {
-    step: "7",
+    step: "6",
     key: "study-plans",
     label: "แผนผังการเรียนรายเทอม",
     detail: "แผนรายปีและรายเทอมตามหลักสูตร"
   },
   {
-    step: "8",
+    step: "7",
     key: "offerings",
     label: "จัดการวิชาเปิดแต่ละเทอม",
     detail: "กำหนดเทอม 1 เทอม 2 และภาคฤดูร้อน"
+  },
+  {
+    step: "8",
+    key: "publish",
+    label: "Publish",
+    detail: "ตรวจผลสุดท้ายก่อนเปิดให้นักศึกษาใช้"
   }
 ];
 

@@ -26,12 +26,17 @@ import {
   getLatestTranscriptSummary
 } from "@/lib/analysis/status";
 import { getAnalysisData, getDemoUserId, saveAnalysisResult } from "@/lib/db/repository";
-import type { AnalysisResult, PlanTrack, ProgramCode, RiskStatus, TranscriptCourse } from "@/lib/types";
+import type { AnalysisResult, PlanTrack, ProgramCode, RegGraduationStatus, RiskStatus, TranscriptCourse } from "@/lib/types";
+
+type AnalyzeAcademicPlanOptions = {
+  regStatus?: RegGraduationStatus;
+};
 
 export function analyzeAcademicPlan(
   programCode: ProgramCode = getDefaultDemoProgramCode(),
   transcriptCourses: TranscriptCourse[] = demoTranscriptCourses,
-  track: PlanTrack = "research"
+  track: PlanTrack = "research",
+  options: AnalyzeAcademicPlanOptions = {}
 ): AnalysisResult {
   const demoData = {
     courses: demoCourses,
@@ -63,7 +68,7 @@ export function analyzeAcademicPlan(
     graduationForecast,
     trackRequirement: audit.trackRequirement
   });
-  const regGraduationStatus = evaluateRegGraduationStatus();
+  const regGraduationStatus = evaluateRegGraduationStatus(options.regStatus);
   const partial = {
     gpax,
     latestGpa,
@@ -83,7 +88,8 @@ export function analyzeAcademicPlan(
     graduationReadiness: evaluateGraduationReadiness({
       courseStatuses: audit.courseStatuses,
       graduationForecast,
-      trackRequirement: audit.trackRequirement
+      trackRequirement: audit.trackRequirement,
+      regStatus: options.regStatus
     }),
     readiness: checkReadiness(audit.program, audit.courseStatuses, audit.earnedCredits, gpax)
   };

@@ -1,4 +1,9 @@
-import { APS_GOLDEN_CASES, type GoldenCaseId } from "../src/lib/analysis/golden-cases";
+import { analyzeAcademicPlan } from "../src/lib/analysis";
+import {
+  APS_GOLDEN_CASES,
+  buildGoldenCaseTranscript,
+  type GoldenCaseId
+} from "../src/lib/analysis/golden-cases";
 
 const REQUIRED_CASES: GoldenCaseId[] = [
   "IT_Sand",
@@ -26,6 +31,7 @@ function main() {
     track: "research",
     regStatus: "approved",
     readiness: "approved",
+    academicEligibility: "eligible_now",
     expectedAcademicYear: 2568,
     expectedSemester: 2
   });
@@ -35,6 +41,7 @@ function main() {
       track: "research",
       regStatus: "applied",
       readiness: "applied_pending_result",
+      academicEligibility: "eligible_if_pending_passed",
       expectedAcademicYear: 2568,
       expectedSemester: 3
     });
@@ -46,6 +53,7 @@ function main() {
       track: "coop",
       regStatus: "applied",
       readiness: "applied_pending_result",
+      academicEligibility: "eligible_if_pending_passed",
       expectedAcademicYear: 2568,
       expectedSemester: 3
     });
@@ -55,10 +63,15 @@ function main() {
   assertCase("CS_Moss", {
     track: "research",
     regStatus: "not_found",
-    readiness: "not_ready"
+    readiness: "not_ready",
+    academicEligibility: "forecast_eligible"
   });
 
-  console.log(`Golden cases OK: ${APS_GOLDEN_CASES.length} cases`);
+  for (const goldenCase of APS_GOLDEN_CASES) {
+    assertAnalysisMatchesGoldenCase(goldenCase);
+  }
+
+  console.log(`Golden cases OK: ${APS_GOLDEN_CASES.length} cases verified against analysis engine`);
 
   function assertCase(caseId: GoldenCaseId, expected: Partial<(typeof APS_GOLDEN_CASES)[number]>) {
     const actual = caseById.get(caseId);
@@ -67,6 +80,67 @@ function main() {
     for (const [key, value] of Object.entries(expected)) {
       assertEqual(actual[key as keyof typeof actual], value, `${caseId}.${key}`);
     }
+  }
+}
+
+function assertAnalysisMatchesGoldenCase(goldenCase: (typeof APS_GOLDEN_CASES)[number]) {
+  const transcriptCourses = buildGoldenCaseTranscript(goldenCase);
+  const analysis = analyzeAcademicPlan(goldenCase.programCode, transcriptCourses, goldenCase.track, {
+    regStatus: goldenCase.regStatus
+  });
+
+  assertEqual(analysis.trackRequirement.track, goldenCase.track, `${goldenCase.caseId}.analysis.track`);
+  assertEqual(analysis.regGraduationStatus.status, goldenCase.regStatus, `${goldenCase.caseId}.analysis.regStatus`);
+  assertEqual(
+    analysis.graduationReadiness.state,
+    goldenCase.readiness,
+    `${goldenCase.caseId}.analysis.graduationReadiness`
+  );
+  assertEqual(
+    analysis.academicEligibility.state,
+    goldenCase.academicEligibility,
+    `${goldenCase.caseId}.analysis.academicEligibility`
+  );
+
+  if (goldenCase.expectedAcademicYear) {
+    assertEqual(
+      analysis.graduationReadiness.expectedAcademicYear,
+      goldenCase.expectedAcademicYear,
+      `${goldenCase.caseId}.analysis.expectedAcademicYear`
+    );
+  }
+
+  if (goldenCase.expectedSemester) {
+    assertEqual(
+      analysis.graduationReadiness.expectedSemester,
+      goldenCase.expectedSemester,
+      `${goldenCase.caseId}.analysis.expectedSemester`
+    );
+  }
+
+  for (const courseCode of goldenCase.pendingCourseCodes) {
+    assertIncludes(
+      analysis.graduationReadiness.pendingCourseCodes,
+      courseCode,
+      `${goldenCase.caseId}.analysis.pendingCourseCodes`
+    );
+  }
+
+  for (const courseCode of goldenCase.pendingGradeCodes) {
+    const courseStatus = analysis.courseStatuses.find((course) => course.courseCode === courseCode);
+    assert(courseStatus, `${goldenCase.caseId}.analysis.courseStatus.${courseCode} missing`);
+    assertEqual(courseStatus.status, "incomplete", `${goldenCase.caseId}.analysis.courseStatus.${courseCode}`);
+  }
+
+  if (goldenCase.caseId === "CS_Moss") {
+    assert(analysis.missingCredits > 0, "CS_Moss.analysis.missingCredits should be greater than 0");
+    assertIncludes(
+      analysis.courseStatuses
+        .filter((course) => course.status === "not_taken")
+        .map((course) => course.courseCode),
+      "520251",
+      "CS_Moss.analysis.missing normal course"
+    );
   }
 }
 

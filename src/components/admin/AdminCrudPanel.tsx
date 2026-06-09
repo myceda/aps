@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type ResourceKey = "programs" | "structures" | "courses" | "prerequisites" | "study-plans" | "offerings";
+export type ResourceKey = "programs" | "structures" | "courses" | "prerequisites" | "study-plans" | "offerings";
 type FormState = Record<string, string | number | boolean>;
 
 type ProgramItem = {
@@ -101,19 +101,19 @@ const emptyData: AdminData = {
 const semesterOptions = [
   { key: "semester-1", value: 1, label: "เทอม 1" },
   { key: "semester-2", value: 2, label: "เทอม 2" },
-  { key: "semester-3", value: 3, label: "เทอม 3 / Summer" }
+  { key: "semester-3", value: 3, label: "เทอม 3 / ภาคฤดูร้อน" }
 ];
 
 const trackOptions = [
-  { key: "track-all", value: "", label: "ทุก track" },
-  { key: "track-research", value: "RESEARCH", label: "Research" },
-  { key: "track-coop", value: "COOP", label: "Co-op" }
+  { key: "track-all", value: "", label: "ทุกกลุ่มแผนการเรียน" },
+  { key: "track-research", value: "RESEARCH", label: "กลุ่มวิจัย" },
+  { key: "track-coop", value: "COOP", label: "กลุ่มสหกิจศึกษา" }
 ];
 
 const resourceConfigs: ResourceConfig[] = [
   {
     key: "programs",
-    step: "1",
+    step: "3",
     label: "หลักสูตร",
     title: "จัดการหลักสูตร",
     goal: "สร้างเวอร์ชันหลักสูตรที่ระบบใช้เป็นฐานวิเคราะห์",
@@ -140,7 +140,7 @@ const resourceConfigs: ResourceConfig[] = [
   },
   {
     key: "structures",
-    step: "1.1",
+    step: "3.1",
     label: "โครงสร้างหลักสูตร",
     title: "จัดการหมวดวิชาและหน่วยกิตขั้นต่ำ",
     goal: "บอกระบบว่าหลักสูตรต้องครบหมวดใดบ้าง",
@@ -161,12 +161,12 @@ const resourceConfigs: ResourceConfig[] = [
   },
   {
     key: "courses",
-    step: "2",
+    step: "4",
     label: "รายวิชา",
     title: "จัดการรายวิชา",
-    goal: "สร้างคลังรายวิชาที่ transcript และแผนเรียนจะนำไปเทียบ",
+    goal: "สร้างคลังรายวิชาที่ข้อมูลผลการเรียนและแผนเรียนจะนำไปเทียบ",
     description: "เพิ่มรหัสวิชา ชื่อวิชา หน่วยกิต หมวดวิชา และหลักสูตรที่เกี่ยวข้อง รายวิชากลางสามารถเว้นหลักสูตรว่างได้",
-    checklist: ["รหัสวิชาตรงกับ transcript และเอกสารหลักสูตร", "หน่วยกิตถูกต้อง", "หมวดวิชาตรงกับโครงสร้างหลักสูตร"],
+    checklist: ["รหัสวิชาตรงกับข้อมูลผลการเรียนและเอกสารหลักสูตร", "หน่วยกิตถูกต้อง", "หมวดวิชาตรงกับโครงสร้างหลักสูตร"],
     defaults: {
       programCode: "",
       code: "",
@@ -188,11 +188,11 @@ const resourceConfigs: ResourceConfig[] = [
   },
   {
     key: "prerequisites",
-    step: "3",
-    label: "Prerequisite",
-    title: "จัดการ prerequisite",
+    step: "5",
+    label: "วิชาบังคับก่อน / วิชาตัวต่อ",
+    title: "จัดการวิชาบังคับก่อน / วิชาตัวต่อ",
     goal: "บอกระบบว่าวิชาใดต้องผ่านก่อน จึงจะลงวิชาต่อได้",
-    description: "ข้อมูลนี้ใช้หา block chain, what-if simulation และ graduation forecast",
+    description: "ข้อมูลนี้ใช้หาลำดับวิชาตัวต่อ ระบบจำลองสถานการณ์เรียน และคาดการณ์วันจบ",
     checklist: ["เลือกวิชาที่ต้องการปลดล็อก", "เลือกวิชาบังคับก่อนให้ถูก", "ระบุ corequisite ถ้าสามารถเรียนพร้อมกันได้"],
     defaults: {
       courseCode: "",
@@ -209,10 +209,10 @@ const resourceConfigs: ResourceConfig[] = [
   },
   {
     key: "study-plans",
-    step: "4",
-    label: "Study plan",
-    title: "จัดการ study plan รายปี/รายเทอม",
-    goal: "วางรายวิชาตามปีและเทอม เพื่อใช้สร้างแผนจบและ diagram 8 ปี",
+    step: "6",
+    label: "แผนผังการเรียนรายเทอม",
+    title: "จัดการแผนผังการเรียนรายปี/รายเทอม",
+    goal: "วางรายวิชาตามปีและเทอม เพื่อใช้สร้างแผนจบและแผนผัง 8 ปี",
     description: "ถ้ายังไม่รู้รหัสวิชาแน่ชัด สามารถใช้ข้อความแทนเพื่อแสดงหมวดวิชาหรือวิชาเลือกได้",
     checklist: ["เลือกหลักสูตร", "ระบุชั้นปีและเทอม", "เลือกวิชาหรือกรอกข้อความแทน", "ใส่หน่วยกิตเพื่อให้แผนรวมถูกต้อง"],
     defaults: {
@@ -229,19 +229,19 @@ const resourceConfigs: ResourceConfig[] = [
       { name: "courseCode", label: "รายวิชา", type: "select", options: courseOptions, helper: "เลือกวิชาหรือใช้ช่องข้อความแทนได้" },
       { name: "yearLevel", label: "ชั้นปี", type: "number", required: true },
       { name: "semester", label: "ภาคการศึกษา", type: "select", required: true, options: () => semesterOptions },
-      { name: "track", label: "Track", type: "select", options: () => trackOptions },
+      { name: "track", label: "กลุ่มแผนการเรียน", type: "select", options: () => trackOptions },
       { name: "placeholder", label: "ข้อความแทนรายวิชา", helper: "เช่น วิชาเลือกเฉพาะด้าน 3 หน่วยกิต" },
       { name: "credits", label: "หน่วยกิต", type: "number", required: true }
     ]
   },
   {
     key: "offerings",
-    step: "5",
+    step: "7",
     label: "วิชาเปิดแต่ละเทอม",
     title: "จัดการวิชาเปิดแต่ละเทอม",
     goal: "บอกระบบว่าวิชาใดเปิดในเทอมใด เพื่อคาดการณ์วันจบได้ใกล้ความจริง",
-    description: "รองรับเทอม 1, เทอม 2 และเทอม 3/Summer ไม่จำกัดเฉพาะภาคฤดูร้อน",
-    checklist: ["เลือกวิชาที่เปิดสอน", "ระบุปีการศึกษา", "เลือกเทอม 1, 2 หรือ 3/Summer"],
+    description: "รองรับเทอม 1, เทอม 2 และเทอม 3 หรือภาคฤดูร้อน ไม่จำกัดเฉพาะภาคฤดูร้อน",
+    checklist: ["เลือกวิชาที่เปิดสอน", "ระบุปีการศึกษา", "เลือกเทอม 1, 2 หรือ 3/ภาคฤดูร้อน"],
     defaults: {
       courseCode: "",
       academicYear: 2568,
@@ -276,8 +276,13 @@ function courseOptions(data: AdminData): SelectOption[] {
   ];
 }
 
-export function AdminCrudPanel() {
-  const [activeKey, setActiveKey] = useState<ResourceKey>("programs");
+type AdminCrudPanelProps = {
+  activeResource?: ResourceKey;
+  showResourceTabs?: boolean;
+};
+
+export function AdminCrudPanel({ activeResource, showResourceTabs = true }: AdminCrudPanelProps = {}) {
+  const [activeKey, setActiveKey] = useState<ResourceKey>(activeResource ?? "programs");
   const [data, setData] = useState<AdminData>(emptyData);
   const [form, setForm] = useState<FormState>(resourceConfigs[0].defaults);
   const [editId, setEditId] = useState<number | null>(null);
@@ -299,6 +304,12 @@ export function AdminCrudPanel() {
     setSearchText("");
   }, []);
 
+  useEffect(() => {
+    if (activeResource && activeResource !== activeKey) {
+      switchResource(activeResource);
+    }
+  }, [activeKey, activeResource, switchResource]);
+
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -316,18 +327,6 @@ export function AdminCrudPanel() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
-
-  useEffect(() => {
-    function handleResourceChange(event: Event) {
-      const resource = (event as CustomEvent<string>).detail;
-      if (resourceConfigs.some((config) => config.key === resource)) {
-        switchResource(resource as ResourceKey);
-      }
-    }
-
-    window.addEventListener("admin-resource-change", handleResourceChange);
-    return () => window.removeEventListener("admin-resource-change", handleResourceChange);
-  }, [switchResource]);
 
   const activeItems = data[activeKey];
   const filteredItems = useMemo(() => {
@@ -387,41 +386,44 @@ export function AdminCrudPanel() {
   }
 
   return (
-    <section className="surface p-4" id="admin-management">
+    <section className="surface p-5" id="admin-management">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-teal">Workflow editor</p>
-          <h2 className="mt-1 text-lg font-bold text-ink">จัดการข้อมูลหลักโดยไม่ต้องแก้ JSON</h2>
+          <p className="text-sm font-semibold text-sky-700">ขั้นตอนที่ {activeConfig.step}</p>
+          <h2 className="mt-1 text-xl font-bold text-ink">{activeConfig.title}</h2>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-            เลือกขั้นตอน กรอกข้อมูลในฟอร์ม แล้วบันทึก ข้อมูลเหล่านี้จะถูกใช้กับ student dashboard, graduation forecast และ what-if simulation
+            กรอกข้อมูลที่จำเป็นในฟอร์มด้านซ้าย แล้วตรวจรายการที่มีอยู่ด้านขวา ข้อมูลส่วนนี้จะถูกใช้คำนวณ dashboard นักศึกษา
           </p>
         </div>
-        <button className="rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold disabled:opacity-60" disabled={isLoading} onClick={loadData}>
+        <button className="rounded-xl border border-line bg-white px-3 py-2 text-sm font-semibold disabled:opacity-60" disabled={isLoading} onClick={loadData}>
           โหลดข้อมูลใหม่
         </button>
       </div>
 
-      <div className="mt-4 grid gap-2 md:grid-cols-3 xl:grid-cols-6">
-        {resourceConfigs.map((config) => (
-          <button
-            className={`rounded-md border px-3 py-2 text-left text-sm ${activeKey === config.key ? "border-teal bg-mist text-teal" : "border-line bg-white hover:bg-mist"}`}
-            key={config.key}
-            onClick={() => switchResource(config.key)}
-          >
-            <span className="block text-xs font-bold">ขั้นตอน {config.step}</span>
-            <span className="mt-1 block font-bold">{config.label}</span>
-          </button>
-        ))}
-      </div>
+      {showResourceTabs ? (
+        <div className="mt-4 grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+          {resourceConfigs.map((config) => (
+            <button
+              className={`rounded-xl border px-3 py-2 text-left text-sm ${activeKey === config.key ? "border-sky-300 bg-sky-50 text-sky-700" : "border-line bg-white hover:bg-mist"}`}
+              key={config.key}
+              onClick={() => switchResource(config.key)}
+              type="button"
+            >
+              <span className="block text-xs font-bold">ขั้นตอน {config.step}</span>
+              <span className="mt-1 block font-bold">{config.label}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
-      <div className="mt-4 grid gap-3 rounded-md border border-line bg-mist p-3 lg:grid-cols-[1fr_320px]">
+      <div className="mt-4 grid gap-3 rounded-2xl border border-line bg-mist p-4 lg:grid-cols-[1fr_320px]">
         <div>
-          <p className="text-sm font-bold text-teal">เป้าหมายขั้นตอน {activeConfig.step}</p>
+          <p className="text-sm font-bold text-sky-700">เป้าหมายของขั้นตอนนี้</p>
           <p className="mt-1 font-bold text-ink">{activeConfig.goal}</p>
           <p className="mt-1 text-sm leading-6 text-slate-600">{activeConfig.description}</p>
         </div>
-        <div className="rounded-md bg-white p-3">
-          <p className="text-sm font-bold text-ink">ควรกรอกให้ครบ</p>
+        <div className="rounded-xl bg-white p-3">
+          <p className="text-sm font-bold text-ink">Checklist ก่อนบันทึก</p>
           <div className="mt-2 grid gap-1">
             {activeConfig.checklist.map((item) => (
               <p className="text-xs leading-5 text-slate-600" key={item}>{item}</p>
@@ -431,13 +433,13 @@ export function AdminCrudPanel() {
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-md border border-line bg-white p-3">
+        <div className="rounded-2xl border border-line bg-white p-4 shadow-sm">
           <div>
-            <h3 className="font-bold text-ink">{activeConfig.title}</h3>
+            <h3 className="font-bold text-ink">ฟอร์มสำหรับเพิ่มหรือแก้ข้อมูล</h3>
             <p className="mt-1 text-sm leading-6 text-slate-600">กรอกช่องที่มี * ให้ครบก่อนบันทึก</p>
           </div>
 
-          <div className="mt-4 grid gap-3">
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
             {activeConfig.fields.map((field) => (
               <FieldInput
                 data={data}
@@ -450,11 +452,11 @@ export function AdminCrudPanel() {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <button className="rounded-md bg-teal px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" disabled={isLoading} onClick={submit}>
-              {editId ? "อัปเดตข้อมูล" : "เพิ่มข้อมูล"}
+            <button className="rounded-xl bg-sky-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-60" disabled={isLoading} onClick={submit}>
+              {editId ? "บันทึกการแก้ไข" : "เพิ่มรายการนี้"}
             </button>
             {editId ? (
-              <button className="rounded-md border border-line px-4 py-2 text-sm font-semibold" onClick={resetForm}>
+              <button className="rounded-xl border border-line px-4 py-2 text-sm font-semibold" onClick={resetForm}>
                 ยกเลิกแก้ไข
               </button>
             ) : null}
@@ -463,10 +465,10 @@ export function AdminCrudPanel() {
           {message ? <p className="mt-3 rounded-md border border-line bg-mist p-3 text-sm text-slate-700">{message}</p> : null}
         </div>
 
-        <div className="rounded-md border border-line bg-white">
+        <div className="rounded-2xl border border-line bg-white">
           <div className="grid gap-3 border-b border-line bg-mist px-3 py-2 md:grid-cols-[1fr_220px]">
             <div>
-              <p className="font-semibold text-ink">รายการ{activeConfig.label}</p>
+              <p className="font-semibold text-ink">ข้อมูลที่มีอยู่ในขั้นตอนนี้</p>
               <p className="text-sm text-slate-500">แสดง {filteredItems.length}/{activeItems.length} รายการ</p>
             </div>
             <input
@@ -478,7 +480,7 @@ export function AdminCrudPanel() {
           </div>
           <div className="max-h-[560px] overflow-auto p-3">
             {filteredItems.length === 0 ? (
-              <p className="rounded-md bg-white p-3 text-sm text-slate-500">ยังไม่มีข้อมูลในขั้นตอนนี้</p>
+              <p className="rounded-xl bg-white p-3 text-sm text-slate-500">ยังไม่มีข้อมูลในขั้นตอนนี้ ให้เริ่มจากฟอร์มด้านซ้ายหรือ import CSV</p>
             ) : (
               <div className="grid gap-2">
                 {filteredItems.map((item) => (
@@ -688,12 +690,18 @@ function getItemDescription(resource: ResourceKey, item: AdminItem) {
   }
   if (resource === "study-plans") {
     const plan = item as StudyPlanItem;
-    return `${plan.program.code} | ชั้นปี ${plan.yearLevel} | ${formatSemester(plan.semester)} | ${plan.track ?? "ทุก track"} | ${plan.credits} หน่วยกิต`;
+    return `${plan.program.code} | ชั้นปี ${plan.yearLevel} | ${formatSemester(plan.semester)} | ${formatTrack(plan.track)} | ${plan.credits} หน่วยกิต`;
   }
   const offering = item as OfferingItem;
   return `ปีการศึกษา ${offering.academicYear} | ${formatSemester(offering.semester)}`;
 }
 
 function formatSemester(semester: number) {
-  return semester === 3 ? "เทอม 3 / Summer" : `เทอม ${semester}`;
+  return semester === 3 ? "เทอม 3 / ภาคฤดูร้อน" : `เทอม ${semester}`;
+}
+
+function formatTrack(track?: string | null) {
+  if (track === "RESEARCH") return "กลุ่มวิจัย";
+  if (track === "COOP") return "กลุ่มสหกิจศึกษา";
+  return "ทุกกลุ่มแผนการเรียน";
 }

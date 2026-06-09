@@ -31,6 +31,7 @@ export function getCourseStatus(attempts: TranscriptCourse[], gradeMap = mapping
   const latestAttempt = attempts.at(-1);
   if (!latestAttempt) return "not_taken";
   if (latestAttempt.gradeChar === "W") return "withdrawn";
+  if (latestAttempt.gradeChar === "I") return "incomplete";
   return "failed";
 }
 

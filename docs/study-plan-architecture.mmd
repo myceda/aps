@@ -1,0 +1,71 @@
+flowchart LR
+  subgraph client ["ผู้ใช้งาน"]
+    student["นักศึกษา"]
+    admin["ผู้ดูแลระบบ"]
+  end
+
+  subgraph gateway ["Frontend: ส่วนติดต่อผู้ใช้"]
+    login["เข้าสู่ระบบ"]
+    dashboard["แดชบอร์ดวางแผนการเรียน"]
+    transcriptTools["เครื่องมือจัดการ Transcript"]
+    whatif["จำลอง What-if"]
+    adminPanel["หน้าจัดการผู้ดูแลระบบ"]
+  end
+
+  subgraph service ["Backend API และ Analysis Engine"]
+    auth["บริการยืนยันตัวตน"]
+    transcriptApi["API นำเข้า Transcript"]
+    analysisApi["API วิเคราะห์แผนการเรียน"]
+    adminApi["API จัดการข้อมูลหลักสูตร"]
+    validator["ตรวจสอบความถูกต้องของข้อมูล"]
+    forecast["คาดการณ์การจบการศึกษา"]
+    prereq["ตรวจเงื่อนไข Prerequisite"]
+    offering["ตรวจวิชาเปิดสอนแต่ละเทอม"]
+    proStatus["ประเมินสถานะโปร"]
+    simulator["จำลองผลกระทบ What-if"]
+  end
+
+  subgraph datastore ["ฐานข้อมูล"]
+    studentRecords["ข้อมูลผลการเรียนของนักศึกษา"]
+    curriculum["ข้อมูลหลักสูตรและรายวิชา"]
+    prerequisites["ข้อมูล Prerequisite"]
+    offerings["ข้อมูลวิชาเปิดสอน"]
+    studyPlan["ข้อมูล Study Plan"]
+    rules["กฎการวิเคราะห์"]
+  end
+
+  student -->|"เข้าสู่ระบบ"| login
+  admin -->|"เข้าสู่ระบบ"| login
+  student -->|"ดูผลวิเคราะห์"| dashboard
+  admin -->|"จัดการข้อมูล"| adminPanel
+
+  login -->|"ตรวจสอบบัญชี"| auth
+  dashboard -->|"ขอผลวิเคราะห์ล่าสุด"| analysisApi
+  dashboard -->|"เปิดจำลองแผน"| whatif
+  dashboard -->|"แก้ไข Transcript"| transcriptTools
+  transcriptTools -->|"ส่ง PDF หรือข้อมูลที่แก้ไขแล้ว"| transcriptApi
+  whatif -->|"ส่งเงื่อนไขจำลอง"| analysisApi
+  adminPanel -->|"เพิ่ม แก้ไข ตรวจข้อมูลหลักสูตร"| adminApi
+
+  auth -->|"อ่านข้อมูลผู้ใช้"| studentRecords
+  transcriptApi -->|"ตรวจรูปแบบและความครบถ้วน"| validator
+  validator -->|"บันทึกผลการเรียนที่ยืนยันแล้ว"| studentRecords
+
+  analysisApi -->|"คำนวณแผนจบ"| forecast
+  analysisApi -->|"จำลองสถานการณ์"| simulator
+  adminApi -->|"บันทึกข้อมูลหลักสูตร"| curriculum
+
+  forecast -->|"ตรวจวิชาที่ต้องผ่านก่อน"| prereq
+  forecast -->|"ตรวจวิชาเปิดสอน"| offering
+  forecast -->|"ตรวจสถานะและความเสี่ยง"| proStatus
+  simulator -->|"คำนวณแผนใหม่"| forecast
+
+  prereq -->|"อ่านเงื่อนไขวิชาต่อ"| prerequisites
+  offering -->|"อ่านข้อมูลวิชาเปิดสอน"| offerings
+  forecast -->|"อ่านแผนเรียนตามหลักสูตร"| studyPlan
+  proStatus -->|"อ่านเกณฑ์โปร"| rules
+  forecast -->|"อ่านผลการเรียน"| studentRecords
+
+  forecast <---|"ส่งแผนจบและรายวิชาที่ต้องเรียน"| dashboard
+  simulator <---|"ส่งผลเปรียบเทียบแผน"| dashboard
+  proStatus <---|"ส่งสถานะและเหตุผล"| dashboard

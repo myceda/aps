@@ -14,36 +14,36 @@ type ImportTemplateView = {
 const templates: ImportTemplateView[] = [
   {
     resource: "courses",
-    label: "courses",
-    title: "รายวิชา",
+    label: "รายวิชา",
+    title: "ข้อมูลรายวิชา",
     description: "ใช้เพิ่มรายวิชาจำนวนมากจากเอกสารหลักสูตรหรือไฟล์ Excel เดิม",
     columns: ["programCode", "code", "nameTh", "nameEn", "credits", "category", "groupName"]
   },
   {
     resource: "prerequisites",
-    label: "prerequisites",
-    title: "Prerequisite",
-    description: "ใช้เพิ่มวิชาบังคับก่อน เพื่อให้ระบบคำนวณวิชาที่ block การจบได้",
+    label: "วิชาตัวต่อ",
+    title: "วิชาบังคับก่อน / วิชาตัวต่อ",
+    description: "ใช้เพิ่มวิชาบังคับก่อน เพื่อให้ระบบคำนวณวิชาที่ขวางการจบได้",
     columns: ["courseCode", "prereqCourseCode", "isCorequisite", "conditionNote"]
   },
   {
     resource: "study-plans",
-    label: "study_plan",
-    title: "Study plan",
-    description: "ใช้เพิ่มแผนรายปี/รายเทอมสำหรับ graduation forecast และ diagram 8 ปี",
+    label: "แผนรายเทอม",
+    title: "แผนผังการเรียนรายเทอม",
+    description: "ใช้เพิ่มแผนรายปี/รายเทอมสำหรับคาดการณ์วันจบและแผนผัง 8 ปี",
     columns: ["programCode", "courseCode", "yearLevel", "semester", "track", "placeholder", "credits"]
   },
   {
     resource: "offerings",
-    label: "course_offerings",
+    label: "วิชาเปิดสอน",
     title: "วิชาเปิดแต่ละเทอม",
     description: "ใช้เพิ่มว่าวิชาใดเปิดในปีการศึกษาและเทอมใด",
     columns: ["courseCode", "academicYear", "semester"]
   },
   {
     resource: "rules",
-    label: "rules",
-    title: "Rules",
+    label: "กติกา",
+    title: "กฎการวิเคราะห์",
     description: "ใช้เก็บกฎหรือเงื่อนไขหลักสูตรเป็นข้อมูลอ้างอิง",
     columns: ["programCode", "code", "name", "description"]
   }
@@ -91,28 +91,32 @@ export function AdminImportPanel() {
   }
 
   return (
-    <section className="surface p-4" id="admin-import">
-      <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
+    <section className="surface p-5" id="admin-import">
+      <div className="grid gap-4">
         <div>
-          <p className="text-sm font-semibold text-teal">Import template</p>
-          <h2 className="mt-1 text-lg font-bold text-ink">นำเข้าข้อมูลหลักสูตรด้วย Excel/CSV</h2>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-            ดาวน์โหลด template ไปเปิดใน Excel กรอกข้อมูล แล้วบันทึกเป็น CSV เพื่อนำเข้าระบบ วิธีนี้เป็นเส้นทางหลักที่ควบคุมได้และตรวจสอบซ้ำได้ ส่วน PDF หลักสูตรควรใช้เป็นไฟล์อ้างอิงหรือแนบประกอบเท่านั้น
+          <p className="text-sm font-semibold text-sky-700">ขั้นตอนที่ 2</p>
+          <h2 className="mt-1 text-xl font-bold text-ink">นำเข้าข้อมูลด้วย CSV</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            ถ้ามีข้อมูลจำนวนมาก ให้ดาวน์โหลดแม่แบบไปกรอกใน Excel แล้วนำเข้า CSV ก่อน จากนั้นค่อยไปแก้รายละเอียดรายหมวดในขั้นตอนถัดไป
           </p>
         </div>
 
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
-          <p className="font-bold text-amber-800">หลักการใช้งาน</p>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="font-bold text-amber-900">อ่านก่อนนำเข้า</p>
           <p className="mt-1 text-sm leading-6 text-amber-800">
-            Import จะเพิ่มข้อมูลตามแถวใน CSV ถ้ารหัสซ้ำหรืออ้างอิงวิชาที่ไม่มี ระบบจะแสดงแถวที่นำเข้าไม่สำเร็จให้แก้ในไฟล์แล้วอัปโหลดใหม่
+            การนำเข้าจะเพิ่มข้อมูลตามแถวใน CSV หากรหัสซ้ำหรืออ้างอิงวิชาที่ไม่มี ระบบจะแจ้งแถวที่ผิดให้แก้ในไฟล์แล้วอัปโหลดใหม่
           </p>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-5">
+      <div className="mt-5 grid gap-3 md:grid-cols-5">
         {templates.map((template) => (
           <button
-            className={`rounded-md border p-3 text-left ${activeResource === template.resource ? "border-teal bg-mist text-teal" : "border-line bg-white hover:bg-mist"}`}
+            className={`rounded-xl border p-3 text-left transition ${
+              activeResource === template.resource
+                ? "border-sky-300 bg-sky-50 text-sky-800 shadow-sm"
+                : "border-line bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50/50"
+            }`}
             key={template.resource}
             onClick={() => {
               setActiveResource(template.resource);
@@ -120,58 +124,60 @@ export function AdminImportPanel() {
               setFile(null);
             }}
           >
-            <span className="text-xs font-bold">{template.label}</span>
+            <span className="text-xs font-bold">แม่แบบ</span>
             <span className="mt-1 block font-bold">{template.title}</span>
           </button>
         ))}
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="rounded-md border border-line bg-white p-3">
+      <div className="mt-5 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="rounded-xl border border-line bg-white p-4">
           <p className="font-bold text-ink">{activeTemplate.title}</p>
           <p className="mt-1 text-sm leading-6 text-slate-600">{activeTemplate.description}</p>
 
-          <div className="mt-3 rounded-md bg-mist p-3">
-            <p className="text-sm font-bold text-ink">Columns ที่ต้องมี</p>
+          <div className="mt-4 rounded-xl bg-mist p-3">
+            <p className="text-sm font-bold text-ink">คอลัมน์ที่ต้องมี</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {activeTemplate.columns.map((column) => (
-                <span className="rounded-md border border-line bg-white px-2 py-1 text-xs font-semibold text-slate-700" key={column}>{column}</span>
+                <span className="rounded-lg border border-line bg-white px-2 py-1 text-xs font-semibold text-slate-700" key={column}>
+                  {column}
+                </span>
               ))}
             </div>
           </div>
 
           <a
-            className="mt-4 inline-flex rounded-md bg-teal px-4 py-2 text-sm font-semibold text-white"
+            className="mt-4 inline-flex rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-slate-800"
             href={`/api/admin/import-template/${activeResource}`}
           >
-            ดาวน์โหลด CSV template
+            ดาวน์โหลดแม่แบบ CSV
           </a>
         </div>
 
-        <div className="rounded-md border border-line bg-white p-3">
+        <div className="rounded-xl border border-line bg-white p-4">
           <p className="font-bold text-ink">อัปโหลดไฟล์ CSV ที่กรอกแล้ว</p>
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            เลือกไฟล์ของ template ที่ตรงกับหัวข้อด้านซ้าย ระบบจะตรวจชื่อ column และรายงานแถวที่ผิดพลาด
+            เลือกไฟล์ของแม่แบบที่ตรงกับหัวข้อด้านซ้าย ระบบจะตรวจชื่อคอลัมน์และรายงานแถวที่ผิดพลาด
           </p>
 
           <input
             accept=".csv,text/csv"
-            className="mt-4 w-full rounded-md border border-line bg-white px-3 py-2 text-sm"
+            className="mt-4 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm"
             type="file"
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
 
           <button
-            className="mt-3 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="mt-3 rounded-xl bg-sky-600 px-4 py-3 text-sm font-bold text-white shadow-sm disabled:opacity-60"
             disabled={isImporting}
             onClick={importCsv}
           >
-            {isImporting ? "กำลังนำเข้า" : "นำเข้า CSV"}
+            {isImporting ? "กำลังนำเข้า" : "นำเข้า CSV แล้วตรวจผล"}
           </button>
 
           {result ? (
-            <div className={`mt-4 rounded-md border p-3 ${result.success ? "border-teal bg-mist" : "border-amber-300 bg-amber-50"}`}>
-              <p className={`font-bold ${result.success ? "text-teal" : "text-amber-800"}`}>
+            <div className={`mt-4 rounded-xl border p-3 ${result.success ? "border-emerald-200 bg-emerald-50" : "border-amber-300 bg-amber-50"}`}>
+              <p className={`font-bold ${result.success ? "text-emerald-700" : "text-amber-800"}`}>
                 {result.success ? "นำเข้าสำเร็จ" : "นำเข้าได้บางส่วนหรือต้องแก้ไฟล์"}
               </p>
               <p className="mt-1 text-sm leading-6 text-slate-700">
@@ -179,8 +185,10 @@ export function AdminImportPanel() {
               </p>
               {result.error ? <p className="mt-2 text-sm text-amber-800">{result.error}</p> : null}
               {result.errors?.length ? (
-                <div className="mt-2 max-h-44 overflow-auto rounded-md bg-white p-2">
-                  {result.errors.map((error) => <p className="text-xs leading-5 text-amber-800" key={error}>{error}</p>)}
+                <div className="mt-2 max-h-44 overflow-auto rounded-lg bg-white p-2">
+                  {result.errors.map((error) => (
+                    <p className="text-xs leading-5 text-amber-800" key={error}>{error}</p>
+                  ))}
                 </div>
               ) : null}
             </div>

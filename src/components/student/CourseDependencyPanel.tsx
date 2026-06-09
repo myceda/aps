@@ -5,6 +5,7 @@ const statusText: Record<GradeStatus, string> = {
   passed: "ผ่านแล้ว",
   failed: "ยังไม่ผ่าน",
   withdrawn: "ถอนรายวิชา",
+  incomplete: "รอเกรด",
   not_taken: "ยังไม่ได้เรียน",
   non_credit: "ผ่านแบบไม่นับหน่วยกิต"
 };
@@ -13,6 +14,7 @@ const statusTone: Record<GradeStatus, RiskStatus> = {
   passed: "normal",
   failed: "urgent",
   withdrawn: "watch",
+  incomplete: "watch",
   not_taken: "watch",
   non_credit: "normal"
 };
@@ -28,7 +30,7 @@ export function CourseDependencyPanel({ analysis }: { analysis: AnalysisResult }
           </p>
         </div>
         <Badge status={analysis.courseDependencies.some((item) => item.isBlocking) ? "urgent" : "normal"}>
-          {analysis.courseDependencies.some((item) => item.isBlocking) ? "มีเงื่อนไขที่ยังบล็อก" : "ไม่มีตัวบล็อกหลัก"}
+          {analysis.courseDependencies.some((item) => item.isBlocking) ? "มีเงื่อนไขที่ยังขวางอยู่" : "ไม่มีเงื่อนไขขวางหลัก"}
         </Badge>
       </div>
 

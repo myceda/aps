@@ -20,6 +20,7 @@ export function evaluateProStatus(input: ProStatusInput): ProStatus {
   const nextActions: string[] = [];
   const blockedByPrerequisite = input.prerequisiteImpacts.length;
   const failedOrWithdrawnCourses = input.courseStatuses.filter((course) => course.status === "failed" || course.status === "withdrawn");
+  const incompleteCourses = input.courseStatuses.filter((course) => course.status === "incomplete");
   const completedTermCount = countCompletedTerms(input.courseStatuses);
   const expectedCredits = Math.min(input.totalCreditsMin, completedTermCount * MIN_CREDITS_PER_TERM);
   const lowCreditGap = Math.max(expectedCredits - input.earnedCredits, 0);
@@ -63,6 +64,15 @@ export function evaluateProStatus(input: ProStatusInput): ProStatus {
       severity: lowCreditGap >= 18 ? "urgent" : "watch"
     });
     nextActions.push("เพิ่มแผนเรียนซ้ำหรือเทอม 3/Summer สำหรับวิชาที่เปิดสอน เพื่อลดช่องว่างหน่วยกิต");
+  }
+
+  if (incompleteCourses.length > 0) {
+    reasons.push({
+      title: "มีวิชารอเกรด",
+      detail: `พบ ${incompleteCourses.length} วิชาที่เป็นเกรด I ต้องรอเกรดจริงก่อนนับว่าผ่าน`,
+      severity: "watch"
+    });
+    nextActions.push("ติดตามเกรด I และอัปเดตผลการเรียนอีกครั้งเมื่ออาจารย์ประกาศเกรดจริง");
   }
 
   if (blockedByPrerequisite > 0) {

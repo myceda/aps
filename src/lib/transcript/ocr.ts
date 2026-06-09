@@ -200,7 +200,7 @@ function parseOcrCourseRow(text: string) {
   const normalized = normalizeOcrText(text)
     .replace(/\s+[ป|]\s+/gu, " ")
     .replace(/\s+[Oo]\s+/gu, " 0 ");
-  const match = normalized.match(/(SU\d{3}|\d{6})\s+(.+?)\s+([0-9])\s+(S\*|B\+|C\+|D\+|A|B|C|D|F|W|S|U|ว)\s+([0-9]+(?:[.]?[0-9]+)?)/u);
+  const match = normalized.match(/(SU\d{3}|\d{6})\s+(.+?)\s+([0-9])\s+(S\*|B\+|C\+|D\+|A|B|C|D|F|W|I|S|U|ว)\s+([0-9]+(?:[.]?[0-9]+)?)/u);
   if (!match) return null;
 
   return {
@@ -227,7 +227,7 @@ async function parseOcrCourseCells(
   const gradeText = await recognizeCrop(worker, image, 1375, y, 155, height, 3);
   const code = normalizeOcrText(codeText).match(/SU\d{3}|\d{6}/u)?.[0];
   const credits = normalizeOcrText(creditText).match(/[0-9]/u)?.[0];
-  const grade = normalizeOcrText(gradeText).match(/S\*|B\+|C\+|D\+|A|B|C|D|F|W|S|U|ว/u)?.[0];
+  const grade = normalizeOcrText(gradeText).match(/S\*|B\+|C\+|D\+|A|B|C|D|F|W|I|S|U|ว/u)?.[0];
 
   if (!code || !credits || !grade) return null;
 

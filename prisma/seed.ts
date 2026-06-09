@@ -91,21 +91,31 @@ async function main() {
   for (const plan of demoStudyPlan) {
     const program = await prisma.program.findUniqueOrThrow({ where: { code: plan.programCode } });
     const course = plan.courseCode ? await findCourseForProgram(plan.courseCode, program.id) : null;
-    const existing = await prisma.studyPlan.findFirst({
-      where: {
-        programId: program.id,
-        courseId: course?.id ?? null,
-        yearLevel: plan.yearLevel,
-        semester: plan.semester,
-        track: plan.track === "coop" ? "COOP" : plan.track === "research" ? "RESEARCH" : null
-      }
-    });
+    const track = plan.track === "coop" ? "COOP" : plan.track === "research" ? "RESEARCH" : null;
+    const existing = course
+      ? await prisma.studyPlan.findFirst({
+          where: {
+            programId: program.id,
+            courseId: course.id,
+            track
+          }
+        })
+      : await prisma.studyPlan.findFirst({
+          where: {
+            programId: program.id,
+            courseId: null,
+            yearLevel: plan.yearLevel,
+            semester: plan.semester,
+            track,
+            placeholder: plan.placeholder ?? null
+          }
+        });
     const data = {
       programId: program.id,
       courseId: course?.id ?? null,
       yearLevel: plan.yearLevel,
       semester: plan.semester,
-      track: plan.track === "coop" ? "COOP" : plan.track === "research" ? "RESEARCH" : null,
+      track,
       placeholder: plan.placeholder ?? null,
       credits: plan.credits
     } as const;
@@ -138,20 +148,22 @@ async function main() {
   }
 
   for (const code of summerOfferings) {
-    const course = await findCourseByCode(code);
-    if (!course) continue;
-    for (const academicYear of [2567, 2568]) {
-      await prisma.courseOffering.upsert({
-        where: { courseId_academicYear_semester: { courseId: course.id, academicYear, semester: 3 } },
-        create: { courseId: course.id, academicYear, semester: 3, isSummer: true },
-        update: { isSummer: true }
-      });
+    const courses = await prisma.course.findMany({ where: { code } });
+    for (const course of courses) {
+      for (const academicYear of [2567, 2568]) {
+        await prisma.courseOffering.upsert({
+          where: { courseId_academicYear_semester: { courseId: course.id, academicYear, semester: 3 } },
+          create: { courseId: course.id, academicYear, semester: 3, isSummer: true },
+          update: { isSummer: true }
+        });
+      }
     }
   }
 
   const offeringPlans = demoStudyPlan.filter((plan) => plan.courseCode && plan.semester !== 3);
   for (const plan of offeringPlans) {
-    const course = await findCourseByCode(plan.courseCode!);
+    const program = await prisma.program.findUniqueOrThrow({ where: { code: plan.programCode } });
+    const course = await findCourseForProgram(plan.courseCode!, program.id);
     if (!course) continue;
     await prisma.courseOffering.upsert({
       where: { courseId_academicYear_semester: { courseId: course.id, academicYear: 2568, semester: plan.semester } },

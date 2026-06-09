@@ -40,8 +40,10 @@ export const gradeMappings: GradeMapping[] = [
   { gradeChar: "D", gradePoint: 1, isPassing: true, isAttempt: true, isCredit: true },
   { gradeChar: "F", gradePoint: 0, isPassing: false, isAttempt: true, isCredit: false },
   { gradeChar: "W", gradePoint: 0, isPassing: false, isAttempt: false, isCredit: false },
+  { gradeChar: "I", gradePoint: 0, isPassing: false, isAttempt: false, isCredit: false },
   { gradeChar: "S", gradePoint: 0, isPassing: true, isAttempt: false, isCredit: true },
-  { gradeChar: "S*", gradePoint: 0, isPassing: true, isAttempt: false, isCredit: false }
+  { gradeChar: "S*", gradePoint: 0, isPassing: true, isAttempt: false, isCredit: false },
+  { gradeChar: "U", gradePoint: 0, isPassing: false, isAttempt: false, isCredit: false }
 ];
 
 export const demoCourses: Course[] = [
@@ -68,6 +70,9 @@ export const demoCourses: Course[] = [
   { code: "517392", nameTh: "การเตรียมความพร้อมสำหรับโครงงานวิจัย", credits: 1, category: "วิชาบังคับเลือก", programCode: "CS2565" },
   { code: "517493", nameTh: "โครงงานวิจัย 1", credits: 1, category: "วิชาบังคับเลือก", programCode: "CS2565" },
   { code: "517494", nameTh: "โครงงานวิจัย 2", credits: 2, category: "วิชาบังคับเลือก", programCode: "CS2565" },
+  { code: "517393", nameTh: "การเตรียมความพร้อมสำหรับสหกิจศึกษา", credits: 1, category: "วิชาบังคับเลือก", programCode: "CS2565" },
+  { code: "517496", nameTh: "สหกิจศึกษา", credits: 6, category: "วิชาบังคับเลือก", programCode: "CS2565" },
+  { code: "517497", nameTh: "สัมมนาโครงงานสหกิจศึกษา", credits: 2, category: "วิชาบังคับเลือก", programCode: "CS2565" },
   { code: "520231", nameTh: "การวิเคราะห์ข้อมูล", credits: 3, category: "วิชาบังคับ", programCode: "CS2565" },
   { code: "520251", nameTh: "ปฏิสัมพันธ์ระหว่างมนุษย์กับคอมพิวเตอร์และ UX", credits: 3, category: "วิชาบังคับ", programCode: "CS2565" },
   { code: "520311", nameTh: "กฎหมายและจรรยาบรรณสำหรับเทคโนโลยีสารสนเทศ", credits: 3, category: "วิชาบังคับ", programCode: "CS2565" },
@@ -80,6 +85,7 @@ export const demoCourses: Course[] = [
   { code: "SU301", nameTh: "พลเมืองตื่นรู้", credits: 3, category: "ศึกษาทั่วไป" },
   { code: "SU401", nameTh: "ความเป็นผู้ประกอบการที่ขับเคลื่อนด้วยนวัตกรรม", credits: 3, category: "ศึกษาทั่วไป" },
   { code: "SU402", nameTh: "นวัตกรรมและการออกแบบ", credits: 3, category: "ศึกษาทั่วไป" },
+  { code: "511100", nameTh: "ความรู้พื้นฐานสำหรับแคลคูลัส", credits: 3, category: "วิชาเสริมพื้นฐาน", programCode: "IT2565" },
   { code: "511113", nameTh: "แคลคูลัสสำหรับเทคโนโลยีสารสนเทศ", credits: 3, category: "วิชาแกน", programCode: "IT2565" },
   { code: "515105", nameTh: "สถิติสำหรับเทคโนโลยีสารสนเทศ", credits: 3, category: "วิชาแกน", programCode: "IT2565" },
   { code: "517121", nameTh: "ทักษะการเขียนโปรแกรมคอมพิวเตอร์ 1", credits: 4, category: "วิชาบังคับ", programCode: "IT2565" },
@@ -112,21 +118,47 @@ export const demoCourses: Course[] = [
   { code: "520394", nameTh: "การเตรียมความพร้อมสหกิจศึกษา", credits: 1, category: "วิชาบังคับเลือก", programCode: "IT2565" },
   { code: "520493", nameTh: "โครงงานวิจัย 1", credits: 1, category: "วิชาบังคับเลือก", programCode: "IT2565" },
   { code: "520494", nameTh: "โครงงานวิจัย 2", credits: 2, category: "วิชาบังคับเลือก", programCode: "IT2565" },
-  { code: "520496", nameTh: "สหกิจศึกษา", credits: 6, category: "วิชาบังคับเลือก", programCode: "IT2565" }
-  ,{ code: "520497", nameTh: "สัมมนาโครงงานสหกิจศึกษา", credits: 2, category: "วิชาบังคับเลือก", programCode: "IT2565" }
+  { code: "520496", nameTh: "สหกิจศึกษา", credits: 6, category: "วิชาบังคับเลือก", programCode: "IT2565" },
+  { code: "520497", nameTh: "สัมมนาโครงงานสหกิจศึกษา", credits: 2, category: "วิชาบังคับเลือก", programCode: "IT2565" }
 ];
 
 export const demoStructures: ProgramStructure[] = [
-  { programCode: "CS2565", category: "ศึกษาทั่วไป", minCredits: 30 },
-  { programCode: "CS2565", category: "วิชาแกน", minCredits: 15 },
-  { programCode: "CS2565", category: "วิชาบังคับ", minCredits: 56 },
-  { programCode: "CS2565", category: "วิชาบังคับเลือก", minCredits: 4 },
-  { programCode: "CS2565", category: "วิชาเลือกเสรี", minCredits: 6 },
-  { programCode: "IT2565", category: "ศึกษาทั่วไป", minCredits: 30 },
-  { programCode: "IT2565", category: "วิชาแกน", minCredits: 9 },
-  { programCode: "IT2565", category: "วิชาบังคับ", minCredits: 76 },
-  { programCode: "IT2565", category: "วิชาบังคับเลือก", minCredits: 4 },
-  { programCode: "IT2565", category: "วิชาเลือกเสรี", minCredits: 6 }
+  {
+    programCode: "CS2565",
+    category: "ศึกษาทั่วไป",
+    minCredits: 30,
+    description: "หมวดศึกษาทั่วไปตามหลักสูตร"
+  },
+  {
+    programCode: "CS2565",
+    category: "วิชาเฉพาะ",
+    minCredits: 90,
+    description: "รวมวิชาแกน วิชาบังคับ วิชาบังคับเลือก และวิชาเลือกเฉพาะของ CS"
+  },
+  {
+    programCode: "CS2565",
+    category: "วิชาเลือกเสรี",
+    minCredits: 6,
+    description: "วิชาเลือกเสรี"
+  },
+  {
+    programCode: "IT2565",
+    category: "ศึกษาทั่วไป",
+    minCredits: 30,
+    description: "หมวดศึกษาทั่วไปตามหลักสูตร"
+  },
+  {
+    programCode: "IT2565",
+    category: "วิชาเฉพาะ",
+    minCredits: 97,
+    description: "รวมวิชาแกน วิชาบังคับ วิชาบังคับเลือก และวิชาเลือกเฉพาะของ IT"
+  },
+  {
+    programCode: "IT2565",
+    category: "วิชาเลือกเสรี",
+    minCredits: 6,
+    description: "วิชาเลือกเสรี"
+  }
 ];
 
 export const demoPrerequisites: PrerequisiteRule[] = [
@@ -137,8 +169,11 @@ export const demoPrerequisites: PrerequisiteRule[] = [
   { courseCode: "517311", prereqCourseCode: "517211" },
   { courseCode: "517493", prereqCourseCode: "517392" },
   { courseCode: "517494", prereqCourseCode: "517493" },
+  { courseCode: "517496", prereqCourseCode: "517393", conditionNote: "ต้องผ่านการเตรียมความพร้อมสหกิจศึกษา" },
+  { courseCode: "517497", prereqCourseCode: "517496" },
   { courseCode: "520221", prereqCourseCode: "520101" },
-  { courseCode: "520496", prereqCourseCode: "520394", conditionNote: "ต้องผ่านการเตรียมความพร้อมสหกิจศึกษา" }
+  { courseCode: "520496", prereqCourseCode: "520394", conditionNote: "ต้องผ่านการเตรียมความพร้อมสหกิจศึกษา" },
+  { courseCode: "520497", prereqCourseCode: "520496" }
 ];
 
 export const demoStudyPlan: StudyPlanItem[] = [
@@ -162,10 +197,16 @@ export const demoStudyPlan: StudyPlanItem[] = [
   { programCode: "CS2565", yearLevel: 3, semester: 1, courseCode: "517311", credits: 3 },
   { programCode: "CS2565", yearLevel: 3, semester: 1, courseCode: "517312", credits: 3 },
   { programCode: "CS2565", yearLevel: 3, semester: 1, courseCode: "517321", credits: 3 },
+  { programCode: "CS2565", yearLevel: 3, semester: 1, courseCode: "520251", credits: 3 },
+  { programCode: "CS2565", yearLevel: 3, semester: 1, courseCode: "520361", credits: 3 },
   { programCode: "CS2565", yearLevel: 3, semester: 2, courseCode: "517331", credits: 3 },
-  { programCode: "CS2565", yearLevel: 3, semester: 2, courseCode: "517392", credits: 1 },
+  { programCode: "CS2565", yearLevel: 3, semester: 2, track: "research", courseCode: "517392", credits: 1 },
+  { programCode: "CS2565", yearLevel: 3, semester: 2, courseCode: "520311", credits: 3 },
   { programCode: "CS2565", yearLevel: 4, semester: 1, track: "research", courseCode: "517493", credits: 1 },
   { programCode: "CS2565", yearLevel: 4, semester: 2, track: "research", courseCode: "517494", credits: 2 },
+  { programCode: "CS2565", yearLevel: 3, semester: 2, track: "coop", courseCode: "517393", credits: 1 },
+  { programCode: "CS2565", yearLevel: 4, semester: 1, track: "coop", courseCode: "517496", credits: 6 },
+  { programCode: "CS2565", yearLevel: 4, semester: 2, track: "coop", courseCode: "517497", credits: 2 },
   { programCode: "IT2565", yearLevel: 1, semester: 1, courseCode: "511100", credits: 3 },
   { programCode: "IT2565", yearLevel: 1, semester: 1, courseCode: "511113", credits: 3 },
   { programCode: "IT2565", yearLevel: 1, semester: 1, courseCode: "517121", credits: 4 },
@@ -180,25 +221,25 @@ export const demoStudyPlan: StudyPlanItem[] = [
   { programCode: "IT2565", yearLevel: 1, semester: 2, courseCode: "SU202", credits: 3 },
   { programCode: "IT2565", yearLevel: 2, semester: 1, courseCode: "520213", credits: 3 },
   { programCode: "IT2565", yearLevel: 2, semester: 1, courseCode: "520214", credits: 3 },
-  { programCode: "IT2565", yearLevel: 2, semester: 1, courseCode: "520221", credits: 3 },
-  { programCode: "IT2565", yearLevel: 2, semester: 1, courseCode: "520222", credits: 3 },
-  { programCode: "IT2565", yearLevel: 2, semester: 1, courseCode: "520223", credits: 1 },
+  { programCode: "IT2565", yearLevel: 2, semester: 1, courseCode: "520251", credits: 3 },
+  { programCode: "IT2565", yearLevel: 2, semester: 2, courseCode: "520221", credits: 3 },
+  { programCode: "IT2565", yearLevel: 2, semester: 2, courseCode: "520222", credits: 3 },
+  { programCode: "IT2565", yearLevel: 2, semester: 2, courseCode: "520223", credits: 1 },
   { programCode: "IT2565", yearLevel: 2, semester: 1, courseCode: "SU203", credits: 3 },
   { programCode: "IT2565", yearLevel: 2, semester: 2, courseCode: "520231", credits: 3 },
   { programCode: "IT2565", yearLevel: 2, semester: 2, courseCode: "520232", credits: 3 },
   { programCode: "IT2565", yearLevel: 2, semester: 2, courseCode: "520241", credits: 3 },
   { programCode: "IT2565", yearLevel: 2, semester: 2, courseCode: "520242", credits: 3 },
   { programCode: "IT2565", yearLevel: 2, semester: 2, courseCode: "SU301", credits: 3 },
-  { programCode: "IT2565", yearLevel: 3, semester: 1, courseCode: "520251", credits: 3 },
-  { programCode: "IT2565", yearLevel: 3, semester: 1, courseCode: "520311", credits: 3 },
   { programCode: "IT2565", yearLevel: 3, semester: 1, courseCode: "520321", credits: 3 },
   { programCode: "IT2565", yearLevel: 3, semester: 1, courseCode: "520322", credits: 3 },
   { programCode: "IT2565", yearLevel: 3, semester: 1, courseCode: "520331", credits: 3 },
+  { programCode: "IT2565", yearLevel: 3, semester: 1, courseCode: "520341", credits: 3 },
+  { programCode: "IT2565", yearLevel: 3, semester: 1, courseCode: "520342", credits: 3 },
+  { programCode: "IT2565", yearLevel: 3, semester: 1, courseCode: "520361", credits: 3 },
   { programCode: "IT2565", yearLevel: 3, semester: 1, courseCode: "SU401", credits: 3 },
-  { programCode: "IT2565", yearLevel: 3, semester: 2, courseCode: "520341", credits: 3 },
-  { programCode: "IT2565", yearLevel: 3, semester: 2, courseCode: "520342", credits: 3 },
+  { programCode: "IT2565", yearLevel: 3, semester: 2, courseCode: "520311", credits: 3 },
   { programCode: "IT2565", yearLevel: 3, semester: 2, courseCode: "520343", credits: 2 },
-  { programCode: "IT2565", yearLevel: 3, semester: 2, courseCode: "520361", credits: 3 },
   { programCode: "IT2565", yearLevel: 3, semester: 2, courseCode: "520393", track: "research", credits: 1 },
   { programCode: "IT2565", yearLevel: 3, semester: 2, courseCode: "520394", track: "coop", credits: 1 },
   { programCode: "IT2565", yearLevel: 4, semester: 1, courseCode: "520493", track: "research", credits: 1 },
@@ -230,4 +271,4 @@ export const demoTranscriptSummaries: TranscriptSummary[] = [
   { semester: 2, academicYear: 2567, gpa: 2.0, gpax: 2.75, creditAttempt: 125, gradePoint: 344 }
 ];
 
-export const summerOfferings = new Set(["517241", "517261", "517121"]);
+export const summerOfferings = new Set(["517121", "517241", "517261", "517494", "517497", "520494", "520497"]);

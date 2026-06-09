@@ -8,6 +8,10 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test:curriculum": "tsx scripts/verify-curriculum-master-data.ts",
+    "test:transcript": "tsx scripts/verify-transcript-pipeline.ts",
+    "test:eligibility": "tsx scripts/verify-academic-reg-separation.ts",
+    "test:golden": "tsx scripts/verify-golden-cases.ts",
     "prisma:generate": "prisma generate",
     "prisma:seed": "tsx prisma/seed.ts"
   },

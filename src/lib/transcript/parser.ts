@@ -7,7 +7,7 @@ type SemesterMarker = {
   academicYear: number;
 };
 
-const coursePattern = /(?<!\d)(SU\s*\d{3}|\d{3}\s*\d{3})(?!\d)\s+(.+?)\s+(\d+(?:\.\d+)?)\s+(A|B\+|B|C\+|C|D\+|D|F|W|S\*?|U)(?:\s+[0-9]+(?:\.[0-9]+)?)?/gu;
+const coursePattern = /(?<!\d)(SU\s*\d{3}|\d{3}\s*\d{3})(?!\d)\s+(.+?)\s+(\d+(?:\.\d+)?)\s+(A|B\+|B|C\+|C|D\+|D|F|W|I|S\*?|U)(?:\s+[0-9]+(?:\.[0-9]+)?)?/gu;
 const semesterPattern = /ภาคการศึกษา(?:\s*ที่|\s*ท)?[\s\S]{0,24}?([123])\/(25\d{2})/gu;
 const fallbackSemesterPattern = /(?:ภาค|เทอม)\s*([123])\s*(?:ปีการศึกษา|\/)\s*(25\d{2})/gu;
 const summaryPattern = /CR:\s*([0-9.]+)\s*CP:\s*([0-9.]+)\s*CA:\s*([0-9.]+)\s*GP:\s*([0-9.]+)(?:\s*(GPA|GPAX))?/gu;

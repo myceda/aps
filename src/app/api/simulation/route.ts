@@ -2,16 +2,19 @@ import { NextResponse } from "next/server";
 import { simulateGpax } from "@/lib/analysis/gpax-simulator";
 import { getLatestTranscriptSummary } from "@/lib/analysis/status";
 import { requireApiUser } from "@/lib/auth/api-guard";
-import { getAnalysisData, resolveProgramCode } from "@/lib/db/repository";
+import { getAnalysisData, resolveProgramCode, resolveTranscriptOwner } from "@/lib/db/repository";
 import type { SimulationCourseInput } from "@/lib/types";
 
 export async function POST(request: Request) {
   const auth = await requireApiUser(["student", "admin"]);
   if (auth.error) return auth.error;
 
-  const body = (await request.json()) as { targetGpax?: number; courses?: SimulationCourseInput[] };
-  const programCode = await resolveProgramCode(auth.user.id);
-  const data = await getAnalysisData(auth.user.id, programCode);
+  const body = (await request.json()) as { ownerEmail?: string; targetGpax?: number; courses?: SimulationCourseInput[] };
+  const owner = await resolveTranscriptOwner(auth.user, {
+    ownerEmail: body.ownerEmail
+  });
+  const programCode = await resolveProgramCode(owner.id);
+  const data = await getAnalysisData(owner.id, programCode);
   const result = simulateGpax(
     data.transcriptCourses,
     body.courses ?? [],

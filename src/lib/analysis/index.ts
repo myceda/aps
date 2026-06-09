@@ -10,6 +10,11 @@ import {
 } from "@/data/demo-data";
 import { auditCurriculum, summarizeRisk } from "@/lib/analysis/curriculum-audit";
 import { buildGraduationForecast } from "@/lib/analysis/graduation-forecast";
+import {
+  evaluateAcademicEligibility,
+  evaluateGraduationReadiness,
+  evaluateRegGraduationStatus
+} from "@/lib/analysis/graduation-readiness";
 import { analyzePrerequisiteImpact, buildCourseDependencies } from "@/lib/analysis/prerequisite-impact";
 import { evaluateProStatus } from "@/lib/analysis/pro-status";
 import { buildRecommendations } from "@/lib/analysis/recommendation";
@@ -21,11 +26,12 @@ import {
   getLatestTranscriptSummary
 } from "@/lib/analysis/status";
 import { getAnalysisData, getDemoUserId, saveAnalysisResult } from "@/lib/db/repository";
-import type { AnalysisResult, ProgramCode, RiskStatus, TranscriptCourse } from "@/lib/types";
+import type { AnalysisResult, PlanTrack, ProgramCode, RiskStatus, TranscriptCourse } from "@/lib/types";
 
 export function analyzeAcademicPlan(
   programCode: ProgramCode = getDefaultDemoProgramCode(),
-  transcriptCourses: TranscriptCourse[] = demoTranscriptCourses
+  transcriptCourses: TranscriptCourse[] = demoTranscriptCourses,
+  track: PlanTrack = "research"
 ): AnalysisResult {
   const demoData = {
     courses: demoCourses,
@@ -36,7 +42,7 @@ export function analyzeAcademicPlan(
     transcriptCourses,
     transcriptSummaries: demoTranscriptSummaries
   };
-  const audit = auditCurriculum(programCode, transcriptCourses);
+  const audit = auditCurriculum(programCode, transcriptCourses, demoData, track);
   const prerequisiteImpacts = analyzePrerequisiteImpact(programCode, transcriptCourses, demoData);
   const calculated = calculateGpax(transcriptCourses);
   const latestSummary = getLatestTranscriptSummary(demoTranscriptSummaries);
@@ -51,6 +57,13 @@ export function analyzeAcademicPlan(
     courseStatuses: audit.courseStatuses,
     prerequisiteImpacts
   });
+  const graduationForecast = buildGraduationForecast(programCode, audit.courseStatuses, demoData);
+  const academicEligibility = evaluateAcademicEligibility({
+    courseStatuses: audit.courseStatuses,
+    graduationForecast,
+    trackRequirement: audit.trackRequirement
+  });
+  const regGraduationStatus = evaluateRegGraduationStatus();
   const partial = {
     gpax,
     latestGpa,
@@ -63,7 +76,15 @@ export function analyzeAcademicPlan(
     courseStatuses: audit.courseStatuses,
     prerequisiteImpacts,
     courseDependencies: buildCourseDependencies(programCode, audit.courseStatuses, demoData),
-    graduationForecast: buildGraduationForecast(programCode, audit.courseStatuses, demoData),
+    graduationForecast,
+    trackRequirement: audit.trackRequirement,
+    academicEligibility,
+    regGraduationStatus,
+    graduationReadiness: evaluateGraduationReadiness({
+      courseStatuses: audit.courseStatuses,
+      graduationForecast,
+      trackRequirement: audit.trackRequirement
+    }),
     readiness: checkReadiness(audit.program, audit.courseStatuses, audit.earnedCredits, gpax)
   };
   const riskStatus = mergeRiskStatus(summarizeRisk({ missingCredits: audit.missingCredits, prerequisiteImpacts }), proStatus.tone);
@@ -75,7 +96,7 @@ export function analyzeAcademicPlan(
   };
 }
 
-export async function analyzeAcademicPlanFromDatabase(programCode: ProgramCode, userId?: number): Promise<AnalysisResult> {
+export async function analyzeAcademicPlanFromDatabase(programCode: ProgramCode, userId?: number, track: PlanTrack = "research"): Promise<AnalysisResult> {
   const resolvedUserId = userId ?? (await getDemoUserId());
   const data = await getAnalysisData(resolvedUserId, programCode);
 
@@ -83,7 +104,7 @@ export async function analyzeAcademicPlanFromDatabase(programCode: ProgramCode, 
     return buildEmptyAnalysisResult();
   }
 
-  const audit = auditCurriculum(programCode, data.transcriptCourses, data);
+  const audit = auditCurriculum(programCode, data.transcriptCourses, data, track);
   const prerequisiteImpacts = analyzePrerequisiteImpact(programCode, data.transcriptCourses, data);
   const gradeMap = createGradeMap(data.gradeMappings);
   const calculated = calculateGpax(data.transcriptCourses, gradeMap);
@@ -99,6 +120,13 @@ export async function analyzeAcademicPlanFromDatabase(programCode: ProgramCode, 
     courseStatuses: audit.courseStatuses,
     prerequisiteImpacts
   });
+  const graduationForecast = buildGraduationForecast(programCode, audit.courseStatuses, data);
+  const academicEligibility = evaluateAcademicEligibility({
+    courseStatuses: audit.courseStatuses,
+    graduationForecast,
+    trackRequirement: audit.trackRequirement
+  });
+  const regGraduationStatus = evaluateRegGraduationStatus();
   const partial = {
     gpax,
     latestGpa,
@@ -111,7 +139,15 @@ export async function analyzeAcademicPlanFromDatabase(programCode: ProgramCode, 
     courseStatuses: audit.courseStatuses,
     prerequisiteImpacts,
     courseDependencies: buildCourseDependencies(programCode, audit.courseStatuses, data),
-    graduationForecast: buildGraduationForecast(programCode, audit.courseStatuses, data),
+    graduationForecast,
+    trackRequirement: audit.trackRequirement,
+    academicEligibility,
+    regGraduationStatus,
+    graduationReadiness: evaluateGraduationReadiness({
+      courseStatuses: audit.courseStatuses,
+      graduationForecast,
+      trackRequirement: audit.trackRequirement
+    }),
     readiness: checkReadiness(audit.program, audit.courseStatuses, audit.earnedCredits, gpax)
   };
   const riskStatus = mergeRiskStatus(summarizeRisk({ missingCredits: audit.missingCredits, prerequisiteImpacts }), proStatus.tone);
@@ -123,9 +159,9 @@ export async function analyzeAcademicPlanFromDatabase(programCode: ProgramCode, 
   };
 }
 
-export async function analyzeAndPersistAcademicPlan(programCode: ProgramCode, userId?: number) {
+export async function analyzeAndPersistAcademicPlan(programCode: ProgramCode, userId?: number, track: PlanTrack = "research") {
   const resolvedUserId = userId ?? (await getDemoUserId());
-  const analysis = await analyzeAcademicPlanFromDatabase(programCode, resolvedUserId);
+  const analysis = await analyzeAcademicPlanFromDatabase(programCode, resolvedUserId, track);
   await saveAnalysisResult(
     resolvedUserId,
     analysis.riskStatus,
@@ -164,11 +200,39 @@ function buildEmptyAnalysisResult(): AnalysisResult {
     courseDependencies: [],
     graduationForecast: {
       canGraduate: false,
+      condition: "blocked",
+      conditionLabel: "ยังคาดการณ์ไม่ได้",
+      conditionDetail: "ยังไม่มี transcript ที่ยืนยันแล้ว ระบบจึงยังคาดการณ์เทอมจบไม่ได้",
       remainingCredits: 0,
+      pendingCredits: 0,
       plannedCredits: 0,
       terms: [],
+      pendingCourses: [],
       blockedCourses: [],
       notes: ["กรุณาอัปโหลดและยืนยัน transcript ก่อนใช้งานการคาดการณ์แผนจบ"]
+    },
+    trackRequirement: buildEmptyTrackRequirement(),
+    academicEligibility: {
+      state: "not_eligible",
+      label: "ยังไม่เข้าเงื่อนไขจบ",
+      detail: "ยังไม่มี transcript ที่ยืนยันแล้ว ระบบจึงยังประเมินแนวโน้มจบจากผลการเรียนไม่ได้",
+      tone: "watch",
+      pendingCourseCodes: [],
+      trackRequirement: buildEmptyTrackRequirement()
+    },
+    regGraduationStatus: {
+      status: "not_found",
+      label: "ไม่พบสถานะ",
+      detail: "ระบบยังไม่มีข้อมูลจาก REG หรือข้อมูลที่ผู้ดูแลยืนยันเรื่องการยื่นจบ",
+      note: "สถานะ REG ขึ้นเมื่อยื่นจบกับกองบริหารงานวิชาการเท่านั้น",
+      source: "missing"
+    },
+    graduationReadiness: {
+      state: "not_ready",
+      label: "ยังไม่พร้อมยื่นจบ",
+      detail: "ยังไม่มี transcript ที่ยืนยันแล้ว ระบบจึงยังประเมินความพร้อมจบไม่ได้",
+      tone: "watch",
+      pendingCourseCodes: []
     },
     readiness: [],
     recommendations: []
@@ -177,6 +241,19 @@ function buildEmptyAnalysisResult(): AnalysisResult {
 
 function getDefaultDemoProgramCode() {
   return demoPrograms[0]?.code ?? "";
+}
+
+function buildEmptyTrackRequirement() {
+  return {
+    track: "research" as const,
+    label: "สายโครงงานวิจัย",
+    state: "missing" as const,
+    isSatisfied: false,
+    requiredCourses: [],
+    missingCourseCodes: [],
+    pendingCourseCodes: [],
+    detail: "ยังไม่มี transcript ที่ยืนยันแล้ว ระบบจึงยังตรวจเงื่อนไขของสายไม่ได้"
+  };
 }
 
 function mergeRiskStatus(current: RiskStatus, proTone: RiskStatus): RiskStatus {

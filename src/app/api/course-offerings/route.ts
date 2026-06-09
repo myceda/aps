@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth/api-guard";
-import { listCourseOfferings, resolveProgramCode } from "@/lib/db/repository";
+import { listCourseOfferings, resolveProgramCode, resolveTranscriptOwner } from "@/lib/db/repository";
 
 export async function GET(request: Request) {
   const auth = await requireApiUser(["student", "admin"]);
@@ -13,7 +13,10 @@ export async function GET(request: Request) {
   const semester = semesterParam ? Number(semesterParam) : undefined;
 
   try {
-    const programCode = await resolveProgramCode(auth.user.id, url.searchParams.get("program"));
+    const owner = await resolveTranscriptOwner(auth.user, {
+      ownerEmail: url.searchParams.get("ownerEmail")
+    });
+    const programCode = await resolveProgramCode(owner.id, url.searchParams.get("program"));
     return NextResponse.json({
       success: true,
       offerings: await listCourseOfferings(programCode, academicYear, semester)

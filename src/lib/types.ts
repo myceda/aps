@@ -1,9 +1,22 @@
 export type UserRole = "student" | "admin";
 export type ProgramCode = string;
 export type PlanTrack = "research" | "coop";
-export type GradeStatus = "passed" | "failed" | "withdrawn" | "not_taken" | "non_credit";
+export type GradeStatus = "passed" | "failed" | "withdrawn" | "incomplete" | "not_taken" | "non_credit";
 export type RiskStatus = "normal" | "watch" | "urgent";
 export type ProStatusLevel = "normal" | "high_probation" | "low_probation" | "risk_next_term";
+export type AcademicEligibilityState =
+  | "not_eligible"
+  | "eligible_now"
+  | "eligible_if_pending_passed"
+  | "forecast_eligible";
+export type RegGraduationStatus = "not_found" | "applied" | "approved";
+export type TrackRequirementState = "passed" | "pending" | "missing";
+export type GraduationReadiness =
+  | "not_ready"
+  | "ready_to_apply"
+  | "applied_pending_result"
+  | "approved"
+  | "pending_incomplete_grade";
 
 export type Program = {
   code: ProgramCode;
@@ -71,6 +84,8 @@ export type TranscriptCourse = {
   semester: number;
   academicYear: number;
   sourceRow: string;
+  validationSeverity?: "ok" | "warning" | "error";
+  validationMessages?: string[];
 };
 
 export type TranscriptSummary = {
@@ -98,6 +113,25 @@ export type CourseStatus = {
   bestGrade?: string;
   attempts: TranscriptCourse[];
   reason: string;
+};
+
+export type TrackRequirementCourse = {
+  courseCode: string;
+  courseName: string;
+  credits: number;
+  status: GradeStatus;
+  reason: string;
+};
+
+export type TrackRequirementResult = {
+  track: PlanTrack;
+  label: string;
+  state: TrackRequirementState;
+  isSatisfied: boolean;
+  requiredCourses: TrackRequirementCourse[];
+  missingCourseCodes: string[];
+  pendingCourseCodes: string[];
+  detail: string;
 };
 
 export type CategoryProgress = {
@@ -178,11 +212,45 @@ export type GraduationForecast = {
   canGraduate: boolean;
   expectedAcademicYear?: number;
   expectedSemester?: number;
+  condition?: "completed" | "pending_current_courses" | "planned_remaining_courses" | "blocked";
+  conditionLabel?: string;
+  conditionDetail?: string;
   remainingCredits: number;
+  pendingCredits: number;
   plannedCredits: number;
   terms: GraduationForecastTerm[];
+  pendingCourses: GraduationForecastCourse[];
   blockedCourses: GraduationForecastCourse[];
   notes: string[];
+};
+
+export type GraduationReadinessResult = {
+  state: GraduationReadiness;
+  label: string;
+  detail: string;
+  tone: RiskStatus;
+  pendingCourseCodes: string[];
+  expectedAcademicYear?: number;
+  expectedSemester?: number;
+};
+
+export type AcademicEligibilityResult = {
+  state: AcademicEligibilityState;
+  label: string;
+  detail: string;
+  tone: RiskStatus;
+  pendingCourseCodes: string[];
+  trackRequirement: TrackRequirementResult;
+  expectedAcademicYear?: number;
+  expectedSemester?: number;
+};
+
+export type RegGraduationStatusResult = {
+  status: RegGraduationStatus;
+  label: string;
+  detail: string;
+  note: string;
+  source: "reg" | "manual" | "missing";
 };
 
 export type WhatIfSimulationInput = {
@@ -217,6 +285,10 @@ export type AnalysisResult = {
   courseDependencies: CourseDependency[];
   readiness: ReadinessCheck[];
   graduationForecast: GraduationForecast;
+  trackRequirement: TrackRequirementResult;
+  academicEligibility: AcademicEligibilityResult;
+  regGraduationStatus: RegGraduationStatusResult;
+  graduationReadiness: GraduationReadinessResult;
   recommendations: Recommendation[];
 };
 

@@ -2,17 +2,22 @@ import { NextResponse } from "next/server";
 import { auditCurriculum } from "@/lib/analysis/curriculum-audit";
 import { simulateGraduationWhatIf } from "@/lib/analysis/what-if-simulator";
 import { requireApiUser } from "@/lib/auth/api-guard";
-import { getAnalysisData, resolveProgramCode } from "@/lib/db/repository";
+import { getAnalysisData, getStudentProgram, resolveProgramCode, resolveTranscriptOwner } from "@/lib/db/repository";
 import type { WhatIfSimulationInput } from "@/lib/types";
 
 export async function POST(request: Request) {
   const auth = await requireApiUser(["student", "admin"]);
   if (auth.error) return auth.error;
 
-  const body = (await request.json()) as Partial<WhatIfSimulationInput> & { programCode?: string };
-  const programCode = await resolveProgramCode(auth.user.id, body.programCode);
-  const data = await getAnalysisData(auth.user.id, programCode);
-  const audit = auditCurriculum(programCode, data.transcriptCourses, data);
+  const body = (await request.json()) as Partial<WhatIfSimulationInput> & { ownerEmail?: string; programCode?: string };
+  const owner = await resolveTranscriptOwner(auth.user, {
+    ownerEmail: body.ownerEmail
+  });
+  const studentProgram = await getStudentProgram(owner.id);
+  const programCode = await resolveProgramCode(owner.id, body.programCode);
+  const data = await getAnalysisData(owner.id, programCode);
+  const selectedTrack = studentProgram?.track === "coop" ? "coop" : "research";
+  const audit = auditCurriculum(programCode, data.transcriptCourses, data, selectedTrack);
 
   const input: WhatIfSimulationInput = {
     withdrawCourseCode: cleanCourseCode(body.withdrawCourseCode),

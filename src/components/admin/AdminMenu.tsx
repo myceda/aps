@@ -1,45 +1,92 @@
 "use client";
 
-const menu = [
-  { step: "ตรวจ", label: "ตรวจความครบถ้วน", href: "#admin-readiness", detail: "ดูว่าข้อมูลพร้อมเผยแพร่ให้นักศึกษาหรือยัง" },
-  { step: "Import", label: "Import template", href: "#admin-import", detail: "ดาวน์โหลด CSV template และนำเข้าข้อมูลจาก Excel" },
-  { step: "1", label: "หลักสูตร", resource: "programs", detail: "ชื่อหลักสูตร ปีหลักสูตร หน่วยกิตรวม และเกณฑ์ GPAX" },
-  { step: "1.1", label: "โครงสร้างหลักสูตร", resource: "structures", detail: "หมวดวิชาและหน่วยกิตขั้นต่ำของแต่ละหมวด" },
-  { step: "2", label: "รายวิชา", resource: "courses", detail: "รหัสวิชา ชื่อวิชา หน่วยกิต และหมวดวิชา" },
-  { step: "3", label: "Prerequisite", resource: "prerequisites", detail: "วิชาบังคับก่อนและวิชาที่เรียนพร้อมกันได้" },
-  { step: "4", label: "Study plan", resource: "study-plans", detail: "แผนรายปี/รายเทอมตามหลักสูตร" },
-  { step: "5", label: "วิชาเปิดแต่ละเทอม", resource: "offerings", detail: "เทอม 1, เทอม 2 และเทอม 3/Summer" }
-] as const;
+export type AdminStepKey =
+  | "overview"
+  | "programs"
+  | "structures"
+  | "courses"
+  | "prerequisites"
+  | "study-plans"
+  | "offerings";
 
-export function AdminMenu() {
-  function openResource(resource: string) {
-    window.dispatchEvent(new CustomEvent("admin-resource-change", { detail: resource }));
-    document.getElementById("admin-management")?.scrollIntoView({ behavior: "smooth", block: "start" });
+const menu: Array<{
+  step: string;
+  key: AdminStepKey;
+  label: string;
+  detail: string;
+}> = [
+  {
+    step: "ภาพรวม",
+    key: "overview",
+    label: "ตรวจความพร้อมเผยแพร่",
+    detail: "ดูว่าข้อมูลพร้อมให้นักศึกษาใช้งานหรือยัง และนำเข้าข้อมูลจากแม่แบบ"
+  },
+  {
+    step: "1",
+    key: "programs",
+    label: "จัดการหลักสูตร",
+    detail: "ชื่อหลักสูตร ปีหลักสูตร หน่วยกิตรวม และเกณฑ์ GPAX"
+  },
+  {
+    step: "1.1",
+    key: "structures",
+    label: "จัดการโครงสร้างหลักสูตร",
+    detail: "หมวดวิชาและหน่วยกิตขั้นต่ำของแต่ละหมวด"
+  },
+  {
+    step: "2",
+    key: "courses",
+    label: "จัดการรายวิชา",
+    detail: "รหัสวิชา ชื่อวิชา หน่วยกิต และหมวดวิชา"
+  },
+  {
+    step: "3",
+    key: "prerequisites",
+    label: "วิชาบังคับก่อน / วิชาตัวต่อ",
+    detail: "กำหนดวิชาที่ต้องผ่านก่อนและวิชาที่เรียนพร้อมกันได้"
+  },
+  {
+    step: "4",
+    key: "study-plans",
+    label: "แผนผังการเรียนรายเทอม",
+    detail: "แผนรายปีและรายเทอมตามหลักสูตร"
+  },
+  {
+    step: "5",
+    key: "offerings",
+    label: "จัดการวิชาเปิดแต่ละเทอม",
+    detail: "กำหนดเทอม 1 เทอม 2 และภาคฤดูร้อน"
   }
+];
 
+type AdminMenuProps = {
+  activeStep: AdminStepKey;
+  onStepChange: (step: AdminStepKey) => void;
+};
+
+export function AdminMenu({ activeStep, onStepChange }: AdminMenuProps) {
   return (
-    <nav className="surface sticky top-4 h-fit p-4">
-      <p className="text-sm font-semibold text-teal">Admin navigation</p>
-      <h2 className="mt-1 text-lg font-bold text-ink">ตั้งค่าตาม workflow</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-600">
-        เลือกงานที่ต้องจัดการ ระบบจะเปิดฟอร์มด้านขวาให้กรอกข้อมูลที่จำเป็นต่อการวิเคราะห์
+    <nav className="app-sidebar sticky top-4 h-fit p-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-sky-200">เมนูผู้ดูแลระบบ</p>
+      <h2 className="mt-1 text-lg font-bold">ตั้งค่าผู้ดูแลระบบ</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-300">
+        จัดการข้อมูลตามลำดับงาน เพื่อให้ระบบคาดการณ์วันจบและระบบจำลองสถานการณ์เรียนทำงานได้ถูกต้อง
       </p>
 
       <div className="mt-4 grid gap-2">
         {menu.map((item) => (
-          "href" in item ? (
-            <a className="rounded-md border border-line bg-white px-3 py-2 text-left hover:bg-mist" href={item.href} key={item.label}>
-              <span className="text-xs font-bold text-teal">{item.step}</span>
-              <span className="mt-1 block text-sm font-bold text-ink">{item.label}</span>
-              <span className="mt-1 block text-xs leading-5 text-slate-500">{item.detail}</span>
-            </a>
-          ) : (
-            <button className="rounded-md border border-line bg-white px-3 py-2 text-left hover:bg-mist" key={item.label} onClick={() => openResource(item.resource)}>
-              <span className="text-xs font-bold text-teal">{item.step}</span>
-              <span className="mt-1 block text-sm font-bold text-ink">{item.label}</span>
-              <span className="mt-1 block text-xs leading-5 text-slate-500">{item.detail}</span>
-            </button>
-          )
+          <button
+            className={`app-sidebar-item px-3 py-2 text-left transition ${
+              activeStep === item.key ? "bg-sky-600 text-white shadow-sm" : ""
+            }`}
+            key={item.key}
+            onClick={() => onStepChange(item.key)}
+            type="button"
+          >
+            <span className="text-xs font-bold text-sky-200">{item.step}</span>
+            <span className="mt-1 block text-sm font-bold">{item.label}</span>
+            <span className="mt-1 block text-xs leading-5 text-slate-300">{item.detail}</span>
+          </button>
         ))}
       </div>
     </nav>

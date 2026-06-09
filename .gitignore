@@ -5,6 +5,15 @@ coverage/
 .env
 .env*.local
 *.log
+*.pid
 uploads/
 prisma/dev.db
 *.tsbuildinfo
+
+# Local tool output and document extraction scratch files
+-d/
+.codex-tools/
+final_paragraphs*.txt
+final_body_esc.txt
+angle_paras*.txt
+thesis_deep.txt

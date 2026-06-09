@@ -3,8 +3,8 @@ import { Providers } from "@/components/shared/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "APS Academic Planning Support",
-  description: "Curriculum-based academic planning and transcript analysis"
+  title: "ระบบสนับสนุนการวางแผนการเรียน",
+  description: "ระบบวิเคราะห์ผลการเรียนและวางแผนการเรียนตามหลักสูตร"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

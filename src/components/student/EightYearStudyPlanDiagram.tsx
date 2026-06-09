@@ -11,29 +11,31 @@ type DiagramCourse = GraduationForecastCourse & {
 const semesterLabels: Record<number, string> = {
   1: "เทอม 1",
   2: "เทอม 2",
-  3: "Summer"
-};
-
-const statusStyles: Record<DiagramStatus, string> = {
-  passed: "border-leaf bg-green-50 text-leaf",
-  non_credit: "border-leaf bg-green-50 text-leaf",
-  planned: "border-teal bg-teal/10 text-teal",
-  not_taken: "border-line bg-white text-slate-700",
-  withdrawn: "border-amber bg-amber-50 text-amber",
-  failed: "border-coral bg-red-50 text-coral",
-  blocked: "border-coral bg-red-50 text-coral",
-  empty: "border-line bg-white text-slate-400"
+  3: "ภาคฤดูร้อน"
 };
 
 const statusLabels: Record<DiagramStatus, string> = {
   passed: "ผ่านแล้ว",
   non_credit: "ผ่านไม่นับหน่วยกิต",
-  planned: "อยู่ในแผน",
-  not_taken: "ยังไม่ได้เรียน",
+  planned: "แผนอนาคต",
+  not_taken: "ยังไม่เรียน",
   withdrawn: "ถอน",
+  incomplete: "รอเกรด",
   failed: "ตก/ไม่ผ่าน",
-  blocked: "ถูก block",
+  blocked: "ถูกขวาง",
   empty: "ไม่มีวิชา"
+};
+
+const statusStyles: Record<DiagramStatus, string> = {
+  passed: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  non_credit: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  planned: "border-sky-200 bg-sky-50 text-sky-900",
+  not_taken: "border-line bg-white text-slate-700",
+  withdrawn: "border-amber-200 bg-amber-50 text-amber-700",
+  incomplete: "border-amber-200 bg-amber-50 text-amber-800",
+  failed: "border-red-200 bg-red-50 text-red-700",
+  blocked: "border-red-200 bg-red-50 text-red-700",
+  empty: "border-dashed border-line bg-white text-slate-400"
 };
 
 export function EightYearStudyPlanDiagram({ analysis }: { analysis: AnalysisResult }) {
@@ -41,120 +43,157 @@ export function EightYearStudyPlanDiagram({ analysis }: { analysis: AnalysisResu
   const diagramYears = Array.from({ length: 8 }, (_, yearIndex) => yearIndex + 1);
   const plannedByTerm = buildPlannedCourseMap(analysis, startAcademicYear);
   const blockedCourses = analysis.graduationForecast.blockedCourses;
-  const blockingChains = analysis.courseDependencies.filter((item) => item.isBlocking).slice(0, 8);
-  const visibleChains = blockingChains.length > 0 ? blockingChains : analysis.courseDependencies.slice(0, 8);
+  const visibleChains = getVisibleChains(analysis.courseDependencies);
+  const graduationLabel = formatGraduationLabel(
+    analysis.graduationForecast.canGraduate,
+    analysis.graduationForecast.expectedAcademicYear,
+    analysis.graduationForecast.expectedSemester
+  );
 
   return (
-    <section className="surface p-4" id="eight-year-plan">
+    <div className="surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-teal">Diagram แผน 8 ปี</p>
-          <h2 className="text-lg font-bold">แผนรายเทอมตั้งแต่ปี 1 ถึงปี 8</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            แสดงปี 1 เทอม 1, ปี 1 เทอม 2, Summer ต่อเนื่องถึงปี 8 พร้อมสีสถานะของรายวิชาและ block chain ของ prerequisite
+          <p className="text-sm font-semibold text-sky-700">แผนการเรียนรายเทอม</p>
+          <h2 className="text-xl font-bold text-ink">เห็นภาพรวมตั้งแต่ปี 1 ถึงปี 8</h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+            ดูรายปีและรายเทอมโดยไม่ต้องลากตารางยาว สีของรายวิชาช่วยบอกว่าผ่านแล้ว วางแผนไว้ รอเกรด ถอน ไม่ผ่าน หรือถูก prerequisite ขวาง
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
-          <Legend status="passed" />
           <Legend status="planned" />
-          <Legend status="failed" />
+          <Legend status="incomplete" />
           <Legend status="withdrawn" />
+          <Legend status="failed" />
           <Legend status="blocked" />
         </div>
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-md border border-line">
-        <div className="min-w-[1180px]">
-          <div className="grid grid-cols-8 border-b border-line bg-mist">
-            {diagramYears.map((year) => (
-              <div className="border-r border-line px-3 py-2 last:border-r-0" key={year}>
-                <p className="font-bold">ปี {year}</p>
-                <p className="text-xs text-slate-500">ปีการศึกษา {startAcademicYear + year - 1}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-8">
-            {diagramYears.map((year) => (
-              <div className="grid gap-3 border-r border-line p-3 last:border-r-0" key={year}>
-                {[1, 2, 3].map((semester) => (
-                  <TermColumn
-                    courses={plannedByTerm.get(termKey(year, semester)) ?? []}
-                    key={`${year}-${semester}`}
-                    semester={semester}
-                    year={year}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
+      {graduationLabel ? (
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <p className="text-base font-bold text-emerald-800">คาดว่าจะจบ: {graduationLabel}</p>
+          <p className="mt-1 text-sm text-emerald-700">
+            คำนวณจากวิชาที่ยังเหลือ prerequisite วิชาเปิดสอน และจำนวนหน่วยกิตสูงสุดต่อเทอม
+          </p>
         </div>
+      ) : (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="font-bold text-amber-800">ยังคาดการณ์วันจบไม่ได้</p>
+          <p className="mt-1 text-sm text-slate-700">ต้องตรวจข้อมูลผลการเรียน หลักสูตร หรือข้อมูลวิชาเปิดสอนให้ครบก่อน</p>
+        </div>
+      )}
+
+      <div className="mt-5 grid gap-4 xl:grid-cols-2">
+        {diagramYears.map((year) => (
+          <div className="min-w-0 rounded-2xl border border-slate-100 bg-slate-50 p-3 shadow-sm" key={year}>
+            <div className="mb-3 rounded-xl bg-white px-3 py-2">
+              <p className="font-bold text-ink">ปี {year}</p>
+              <p className="text-xs text-slate-500">ปีการศึกษา {startAcademicYear + year - 1}</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {[1, 2, 3].map((semester) => (
+                <TermColumn
+                  courses={plannedByTerm.get(termKey(year, semester)) ?? []}
+                  key={`${year}-${semester}`}
+                  semester={semester}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_0.95fr]">
-        <div className="rounded-md border border-line p-3">
-          <h3 className="font-bold">วิชาที่ block การจบ</h3>
+        <div className="rounded-2xl border border-line bg-white p-4">
+          <h3 className="font-bold text-ink">วิชาที่ขวางการจบ</h3>
           <div className="mt-3 grid gap-2">
             {blockedCourses.length === 0 ? (
-              <p className="rounded-md bg-green-50 p-3 text-sm font-semibold text-leaf">ยังไม่พบวิชาที่ block แผนจบหลัก</p>
+              <p className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">ยังไม่พบวิชาที่ขวางแผนจบหลัก</p>
             ) : (
               blockedCourses.map((course) => (
-                <div className="rounded-md border border-coral bg-red-50 p-3" key={course.courseCode}>
-                  <p className="font-semibold text-coral">{course.courseCode} {course.courseName}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-700">{course.reason}</p>
-                </div>
+                <CourseCard course={{ ...course, status: "blocked", statusLabel: statusLabels.blocked, termKey: "blocked" }} key={course.courseCode} />
               ))
             )}
           </div>
         </div>
 
-        <div className="rounded-md border border-line p-3">
-          <h3 className="font-bold">Block chain ของ prerequisite</h3>
+        <div className="rounded-2xl border border-line bg-white p-4">
+          <h3 className="font-bold text-ink">ลำดับ prerequisite ที่ควรรู้</h3>
           <div className="mt-3 grid gap-2">
             {visibleChains.length === 0 ? (
-              <p className="rounded-md bg-mist p-3 text-sm text-slate-600">ยังไม่มีข้อมูล prerequisite chain ให้แสดง</p>
+              <p className="rounded-xl bg-mist p-3 text-sm text-slate-600">ยังไม่มีข้อมูลลำดับวิชาบังคับก่อนให้แสดง</p>
             ) : (
-              visibleChains.map((chain) => <BlockChain key={`${chain.prerequisiteCode}-${chain.courseCode}`} chain={chain} />)
+              visibleChains.map((chain) => <BlockChain chain={chain} key={`${chain.prerequisiteCode}-${chain.courseCode}`} />)
             )}
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
-function TermColumn({ year, semester, courses }: { year: number; semester: number; courses: DiagramCourse[] }) {
+function TermColumn({ semester, courses }: { semester: number; courses: DiagramCourse[] }) {
+  const credits = courses.reduce((total, course) => total + course.credits, 0);
+
   return (
-    <div className="rounded-md border border-line bg-white">
-      <div className="border-b border-line px-2 py-2">
-        <p className="text-sm font-bold">ปี {year} {semesterLabels[semester]}</p>
-        <p className="text-xs text-slate-500">{courses.reduce((total, course) => total + course.credits, 0)} หน่วยกิต</p>
+    <div className="min-w-0 bg-white rounded-xl p-4 border border-slate-100">
+      <div className="border-b border-slate-100 pb-3">
+        <p className="text-sm font-bold text-slate-950">{semesterLabels[semester]}</p>
+        <p className="text-xs text-slate-500">{credits} หน่วยกิต</p>
       </div>
-      <div className="grid min-h-24 gap-2 p-2">
+      <div className="mt-3 grid gap-2">
         {courses.length === 0 ? (
-          <div className={`rounded-md border px-2 py-3 text-center text-xs font-semibold ${statusStyles.empty}`}>
+          <div className={`rounded-xl border px-3 py-10 text-center text-xs font-semibold ${statusStyles.empty}`}>
             ยังไม่มีวิชา
           </div>
         ) : (
-          courses.map((course) => (
-            <article className={`rounded-md border p-2 ${statusStyles[course.status]}`} key={`${course.termKey}-${course.courseCode}`}>
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-bold">{course.courseCode}</p>
-                <span className="shrink-0 rounded-md bg-white/70 px-2 py-1 text-[11px] font-bold">{course.statusLabel}</span>
-              </div>
-              <p className="mt-1 line-clamp-2 text-xs leading-5">{course.courseName}</p>
-              <p className="mt-2 text-[11px]">{course.credits} หน่วยกิต · {course.category}</p>
-            </article>
-          ))
+          courses.map((course, index) => <CourseCard course={course} key={`${course.termKey}-${course.courseCode}-${index}`} />)
         )}
       </div>
     </div>
   );
 }
 
+function CourseCard({ course }: { course: DiagramCourse }) {
+  const courseStyle = getCourseCardStyle(course);
+
+  return (
+    <article className={`rounded-xl border p-3 shadow-sm ${courseStyle}`}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="whitespace-nowrap text-sm font-extrabold">{course.courseCode}</p>
+        <span className="shrink-0 rounded-lg bg-white/80 px-2 py-1 text-[11px] font-bold">{course.credits} หน่วยกิต</span>
+      </div>
+      <p className="mt-1 line-clamp-2 text-xs leading-5">{course.courseName}</p>
+      <div className="mt-2 flex flex-wrap gap-1">
+        <span className="rounded-lg bg-white/80 px-2 py-1 text-[11px] font-bold">{course.statusLabel}</span>
+        <span className="rounded-lg bg-white/80 px-2 py-1 text-[11px]">{course.category}</span>
+      </div>
+    </article>
+  );
+}
+
+function getCourseCardStyle(course: DiagramCourse) {
+  if (course.status === "blocked" || course.status === "failed") {
+    return "border-red-200 bg-red-50 text-red-800";
+  }
+  if (course.status === "withdrawn" || course.status === "incomplete") {
+    return "border-amber-200 bg-amber-50 text-amber-800";
+  }
+
+  const category = course.category.toLowerCase();
+  if (category.includes("ศึกษา") || category.includes("general") || category.includes("gen")) {
+    return "border-emerald-200 bg-emerald-50 text-emerald-900";
+  }
+  if (category.includes("เลือก") || category.includes("elective")) {
+    return "border-violet-200 bg-violet-50 text-violet-900";
+  }
+
+  return "border-sky-200 bg-sky-50 text-sky-950";
+}
+
 function Legend({ status }: { status: DiagramStatus }) {
   return (
-    <span className={`rounded-md border px-2 py-1 ${statusStyles[status]}`}>
+    <span className={`rounded-lg border px-2 py-1 ${statusStyles[status]}`}>
       {statusLabels[status]}
     </span>
   );
@@ -164,14 +203,14 @@ function BlockChain({ chain }: { chain: CourseDependency }) {
   const isBlocked = chain.isBlocking;
 
   return (
-    <div className={`rounded-md border p-3 ${isBlocked ? "border-coral bg-red-50" : "border-line bg-white"}`}>
+    <div className={`rounded-xl border p-3 ${isBlocked ? "border-red-200 bg-red-50" : "border-line bg-white"}`}>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <ChainNode code={chain.prerequisiteCode} label={chain.prerequisiteName} status={chain.prerequisiteStatus} />
-        <span className="font-bold text-slate-400">→</span>
+        <span className="font-bold text-slate-400">-&gt;</span>
         <ChainNode code={chain.courseCode} label={chain.courseName} status={chain.courseStatus} />
       </div>
-      <p className={`mt-2 text-sm font-semibold ${isBlocked ? "text-coral" : "text-teal"}`}>
-        {isBlocked ? `ต้องผ่าน ${chain.prerequisiteCode} ก่อนจึงจะปลดล็อก ${chain.courseCode}` : "chain นี้ปลดล็อกแล้ว"}
+      <p className={`mt-2 text-sm font-semibold ${isBlocked ? "text-red-700" : "text-sky-700"}`}>
+        {isBlocked ? `ต้องผ่าน ${chain.prerequisiteCode} ก่อนจึงจะปลดล็อก ${chain.courseCode}` : "ลำดับวิชานี้ปลดล็อกแล้ว"}
       </p>
     </div>
   );
@@ -179,7 +218,7 @@ function BlockChain({ chain }: { chain: CourseDependency }) {
 
 function ChainNode({ code, label, status }: { code: string; label: string; status: GradeStatus }) {
   return (
-    <span className={`rounded-md border px-2 py-1 ${statusStyles[status]}`}>
+    <span className={`rounded-lg border px-2 py-1 ${statusStyles[status]}`}>
       <span className="font-bold">{code}</span> <span className="text-xs">{label}</span>
     </span>
   );
@@ -196,7 +235,8 @@ function buildPlannedCourseMap(analysis: AnalysisResult, startAcademicYear: numb
     const key = termKey(yearNumber, term.semester);
     const courses: DiagramCourse[] = term.courses.map((course) => {
       const status = courseStatusByCode.get(course.courseCode);
-      const diagramStatus: DiagramStatus = status === "failed" || status === "withdrawn" ? status : "planned";
+      const diagramStatus: DiagramStatus =
+        status === "failed" || status === "withdrawn" || status === "incomplete" ? status : "planned";
       return {
         ...course,
         status: diagramStatus,
@@ -208,15 +248,12 @@ function buildPlannedCourseMap(analysis: AnalysisResult, startAcademicYear: numb
     plannedByTerm.set(key, [...(plannedByTerm.get(key) ?? []), ...courses]);
   }
 
-  for (const blockedCourse of analysis.graduationForecast.blockedCourses) {
-    const key = termKey(8, 3);
-    plannedByTerm.set(key, [
-      ...(plannedByTerm.get(key) ?? []),
-      { ...blockedCourse, status: "blocked", statusLabel: statusLabels.blocked, termKey: key }
-    ]);
-  }
-
   return plannedByTerm;
+}
+
+function getVisibleChains(chains: CourseDependency[]) {
+  const blockingChains = chains.filter((item) => item.isBlocking);
+  return (blockingChains.length > 0 ? blockingChains : chains).slice(0, 8);
 }
 
 function getStartAcademicYear(analysis: AnalysisResult) {
@@ -227,6 +264,11 @@ function getStartAcademicYear(analysis: AnalysisResult) {
     .at(0);
 
   return firstTranscriptYear ?? firstForecastTerm?.academicYear ?? 2568;
+}
+
+function formatGraduationLabel(canGraduate: boolean, academicYear?: number, semester?: number) {
+  if (!canGraduate || !academicYear || !semester) return "";
+  return `ปีการศึกษา ${academicYear} / ${semester === 3 ? "ภาคฤดูร้อน" : `เทอม ${semester}`}`;
 }
 
 function termKey(year: number, semester: number) {

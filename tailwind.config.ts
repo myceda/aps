@@ -5,13 +5,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#18212f",
-        line: "#d8dee8",
-        mist: "#f5f7fb",
-        teal: "#167c80",
-        coral: "#c85042",
-        amber: "#a66a00",
-        leaf: "#3f7d45"
+        ink: "#0f172a",
+        line: "#e2e8f0",
+        mist: "#f8fafc",
+        teal: "#0284c7",
+        coral: "#ef4444",
+        amber: "#f59e0b",
+        leaf: "#10b981"
       }
     }
   },

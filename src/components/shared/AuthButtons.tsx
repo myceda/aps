@@ -8,62 +8,74 @@ export function AuthButtons() {
 
   if (status === "loading") {
     return (
-      <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
-        กำลังตรวจสอบ session
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-center text-sm font-bold text-slate-600">
+        กำลังตรวจสอบสถานะการเข้าสู่ระบบ
       </div>
     );
   }
 
   if (session?.user) {
-    const dashboardHref = session.user.role === "admin" ? "/admin" : "/student";
-    const roleLabel = session.user.role === "admin" ? "ผู้ดูแลระบบ" : "นักศึกษา";
+    const isAdmin = session.user.role === "admin";
+    const dashboardHref = isAdmin ? "/admin" : "/student";
+    const roleLabel = isAdmin ? "ผู้ดูแลระบบ" : "นักศึกษา";
+    const dashboardLabel = isAdmin ? "เข้าสู่ Admin Panel" : "เข้าสู่ Student Dashboard";
+    const helperText = isAdmin
+      ? "บัญชีนี้สามารถจัดการข้อมูลหลักสูตร และเปิดแฟ้ม transcript ของนักศึกษาคนอื่นเพื่อช่วยตรวจได้"
+      : "บัญชีนี้จะใช้ข้อมูล transcript ของตัวเองเพื่อวิเคราะห์แผนเรียนและวันจบ";
 
     return (
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 sm:p-5">
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-sky-700">ยืนยันตัวตนสำเร็จ</p>
-          <h2 className="text-2xl font-bold text-ink">ยินดีต้อนรับเข้าสู่ระบบ</h2>
-          <p className="text-sm leading-6 text-slate-600">
-            คุณเข้าสู่ระบบในบทบาท{roleLabel}แล้ว สามารถไปยังแดชบอร์ดเพื่อดูสถานะ แผนจบ และเครื่องมือวางแผนการเรียนได้ทันที
-          </p>
-        </div>
-
-        <div className="mt-4 rounded-md border border-slate-200 bg-white px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">บัญชีที่ใช้งาน</p>
+      <div className="grid gap-4">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <p className="text-sm font-extrabold text-[#007a64]">เข้าสู่ระบบแล้ว: {roleLabel}</p>
           <p className="mt-1 break-all text-sm font-semibold text-slate-700">{session.user.email}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{helperText}</p>
         </div>
 
-        <div className="mt-5 grid gap-3">
-          <Link
-            className="rounded-md bg-sky-600 px-5 py-4 text-center text-base font-bold text-white shadow-sm transition hover:bg-sky-700"
-            href={dashboardHref}
-          >
-            เข้าสู่แดชบอร์ดวางแผนการเรียน
-          </Link>
+        <Link
+          className="rounded-lg bg-[#007a64] px-5 py-4 text-center text-base font-extrabold text-white shadow-sm transition hover:bg-[#006855]"
+          href={dashboardHref}
+        >
+          {dashboardLabel}
+        </Link>
 
-          <div className="flex justify-end">
-            <button
-              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-800"
-              onClick={() => signOut({ callbackUrl: "/" })}
-              type="button"
-            >
-              ออกจากระบบ
-            </button>
-          </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Link
+            className="rounded-lg border border-[#007a64] bg-white px-4 py-3 text-center text-sm font-bold text-[#007a64] transition hover:bg-emerald-50"
+            href="/student/transcript-tools"
+          >
+            จัดการ Transcript
+          </Link>
+          <button
+            className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            type="button"
+          >
+            ออกจากระบบ
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-4">
       <button
-        className="rounded-md bg-sky-600 px-5 py-4 text-base font-bold text-white shadow-sm transition hover:bg-sky-700"
+        className="w-full rounded-lg bg-[#007a64] px-5 py-4 text-base font-extrabold text-white shadow-sm transition hover:bg-[#006855]"
         onClick={() => signIn("google", { callbackUrl: "/auth/redirect" })}
         type="button"
       >
-        เข้าสู่ระบบด้วย Google Account
+        เข้าสู่ระบบด้วยบัญชีมหาวิทยาลัย
       </button>
+      <button
+        className="w-full rounded-lg border border-[#007a64] bg-white px-5 py-3 text-base font-bold text-[#007a64] transition hover:bg-emerald-50"
+        onClick={() => signIn("google", { callbackUrl: "/auth/redirect" })}
+        type="button"
+      >
+        ใช้ Google Account ของ Silpakorn
+      </button>
+      <p className="text-center text-sm leading-6 text-slate-500">
+        หลังเข้าสู่ระบบ APS จะตรวจบทบาทบัญชี แล้วพาไปยัง Student Dashboard หรือ Admin Panel โดยอัตโนมัติ
+      </p>
     </div>
   );
 }

@@ -2,7 +2,9 @@ import { ProgressBar } from "@/components/shared/ProgressBar";
 import type { AnalysisResult } from "@/lib/types";
 
 export function StudyPlanComparison({ analysis }: { analysis: AnalysisResult }) {
-  const missing = analysis.courseStatuses.filter((course) => course.status === "not_taken").slice(0, 8);
+  const missing = analysis.courseStatuses
+    .filter((course) => course.status === "not_taken" || course.status === "incomplete")
+    .slice(0, 8);
 
   return (
     <section className="surface p-4">

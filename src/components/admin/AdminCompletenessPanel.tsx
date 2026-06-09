@@ -1,60 +1,109 @@
 import { checkCurriculumCompleteness } from "@/lib/admin/completeness";
 
-const checklist = [
-  "หลักสูตรต้องมีโครงสร้างหมวดวิชาและหน่วยกิตขั้นต่ำ",
-  "รายวิชาต้องมีรหัส หน่วยกิต และหมวดวิชาที่ชัดเจน",
-  "Study plan ต้องครอบคลุมรายปี/รายเทอมที่ต้องการแสดง",
-  "Prerequisite ต้องอ้างถึงรายวิชาที่มีอยู่จริง",
-  "วิชาเปิดแต่ละเทอมควรตรวจใน workflow ขั้นตอนที่ 5"
+const checklistDescriptions = [
+  "รายวิชาใน study plan ต้องมีอยู่จริงใน Course master",
+  "prerequisite ต้องอ้างถึงรายวิชาที่มีจริงและไม่ข้ามหลักสูตรผิด owner",
+  "รายวิชาในแผนต้องมี CourseOffering ในเทอมที่จำเป็น",
+  "Research และ Coop ต้องมีรายวิชาใน Course master และ Study Plan ครบ",
+  "course category ต้องเป็นหมวดที่ระบบใช้คำนวณได้",
+  "credit รวมต่อหมวดต้องตรงกับ PDF หลักสูตร"
 ];
 
 export async function AdminCompletenessPanel() {
   const status = await checkCurriculumCompleteness();
+  const failedChecks = status.checks.filter((check) => check.status === "failed");
 
   return (
-    <section className="surface p-4" id="admin-readiness">
+    <section className="surface p-5" id="admin-readiness">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-teal">Publish readiness</p>
-          <h2 className="mt-1 text-lg font-bold text-ink">ตรวจความครบถ้วนก่อนเผยแพร่</h2>
+          <p className="text-sm font-semibold text-[#007a64]">ขั้นตอนที่ 1</p>
+          <h2 className="mt-1 text-xl font-bold text-ink">ตรวจความพร้อม Curriculum Master Data</h2>
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            ใช้เช็กว่าข้อมูลหลักสูตรพร้อมให้ student dashboard, graduation forecast และ what-if simulation วิเคราะห์หรือยัง
+            ใช้ตรวจข้อมูลก่อน publish ให้นักศึกษาใช้งานจริง ถ้าข้อมูลหลักสูตรไม่พร้อม ผลวิเคราะห์ transcript,
+            graduation forecast และ what-if จะเชื่อถือไม่ได้
           </p>
         </div>
-        <span className={`rounded-md border px-3 py-2 text-xs font-bold ${status.readyToPublish ? "border-teal bg-mist text-teal" : "border-amber-300 bg-amber-50 text-amber-700"}`}>
-          {status.readyToPublish ? "พร้อมเผยแพร่" : "ยังต้องเติมข้อมูล"}
+        <span
+          className={`rounded-md border px-3 py-2 text-xs font-bold ${
+            status.readyToPublish
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-amber-300 bg-amber-50 text-amber-700"
+          }`}
+        >
+          {status.readyToPublish ? "พร้อม publish" : "ยังไม่พร้อม publish"}
         </span>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-5">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <Metric label="หลักสูตร" value={status.programs} />
         <Metric label="รายวิชา" value={status.courses} />
-        <Metric label="โครงสร้าง" value={status.structures} />
-        <Metric label="Study plan" value={status.studyPlanItems} />
+        <Metric label="หมวดหลักสูตร" value={status.structures} />
+        <Metric label="แผนรายเทอม" value={status.studyPlanItems} />
         <Metric label="Prerequisite" value={status.prerequisiteRules} />
+        <Metric label="วิชาเปิดสอน" value={status.courseOfferings} />
       </div>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        <div className="rounded-md border border-line bg-white p-3">
-          <p className="font-bold text-ink">สิ่งที่ระบบต้องมีเพื่อวิเคราะห์ได้</p>
+      <div className="mt-4 grid gap-3">
+        <div className="rounded-md border border-line bg-white p-4">
+          <p className="font-bold text-ink">Checklist ที่ระบบตรวจให้ก่อน publish</p>
           <div className="mt-3 grid gap-2">
-            {checklist.map((item) => (
-              <p className="rounded-md bg-mist px-3 py-2 text-sm text-slate-700" key={item}>{item}</p>
+            {checklistDescriptions.map((item) => (
+              <p className="rounded-md bg-mist px-3 py-2 text-sm text-slate-700" key={item}>
+                {item}
+              </p>
             ))}
           </div>
         </div>
 
-        <div className={`rounded-md border p-3 ${status.issues.length > 0 ? "border-amber-300 bg-amber-50" : "border-teal bg-mist"}`}>
-          <p className={`font-bold ${status.issues.length > 0 ? "text-amber-700" : "text-teal"}`}>
-            {status.issues.length > 0 ? "รายการที่ต้องแก้ก่อนเผยแพร่" : "ไม่พบปัญหาหลัก"}
-          </p>
-          {status.issues.length > 0 ? (
-            <div className="mt-3 grid gap-2">
-              {status.issues.map((issue) => <p className="text-sm leading-6 text-amber-800" key={issue}>{issue}</p>)}
+        <div className="grid gap-3">
+          {status.checks.map((check) => (
+            <div
+              className={`rounded-md border p-4 ${
+                check.status === "passed" ? "border-emerald-200 bg-emerald-50" : "border-amber-300 bg-amber-50"
+              }`}
+              key={check.id}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className={`font-bold ${check.status === "passed" ? "text-emerald-700" : "text-amber-800"}`}>
+                    {check.title}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-slate-700">{check.detail}</p>
+                </div>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-bold ${
+                    check.status === "passed" ? "bg-white text-emerald-700" : "bg-white text-amber-800"
+                  }`}
+                >
+                  {check.status === "passed" ? "ผ่าน" : "ต้องแก้"}
+                </span>
+              </div>
+
+              {check.issues.length > 0 ? (
+                <ul className="mt-3 grid gap-2">
+                  {check.issues.map((issue) => (
+                    <li className="rounded-md bg-white px-3 py-2 text-sm leading-6 text-amber-900" key={issue}>
+                      {issue}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
-          ) : (
-            <p className="mt-3 text-sm leading-6 text-slate-700">ข้อมูลหลักที่ใช้วิเคราะห์ครบตามเงื่อนไขพื้นฐานแล้ว</p>
-          )}
+          ))}
+        </div>
+
+        <div
+          className={`rounded-md border p-4 ${
+            failedChecks.length > 0 ? "border-amber-300 bg-amber-50" : "border-emerald-200 bg-emerald-50"
+          }`}
+        >
+          <p className={`font-bold ${failedChecks.length > 0 ? "text-amber-800" : "text-emerald-700"}`}>
+            {failedChecks.length > 0 ? `พบ ${status.issues.length} จุดที่ต้องแก้ก่อน publish` : "ไม่พบปัญหาหลัก พร้อม publish"}
+          </p>
+          <p className="mt-1 text-sm leading-6 text-slate-700">
+            เมื่อรายการนี้ผ่านทั้งหมด นักศึกษาจึงควรใช้ผลวิเคราะห์จาก APS เพื่อประกอบการวางแผนเรียน
+          </p>
         </div>
       </div>
     </section>

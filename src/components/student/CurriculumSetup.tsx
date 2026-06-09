@@ -10,11 +10,15 @@ type ProgramOption = {
 export function CurriculumSetup({
   initialProgramCode,
   initialStudentCode,
-  initialTrack
+  initialTrack,
+  ownerEmail,
+  ownerName
 }: {
   initialProgramCode?: string;
   initialStudentCode?: string;
   initialTrack?: string;
+  ownerEmail?: string;
+  ownerName?: string;
 }) {
   const [programCode, setProgramCode] = useState(initialProgramCode ?? "");
   const [programs, setPrograms] = useState<ProgramOption[]>([]);
@@ -24,7 +28,8 @@ export function CurriculumSetup({
 
   useEffect(() => {
     async function loadPrograms() {
-      const response = await fetch("/api/student-program");
+      const query = ownerEmail ? `?ownerEmail=${encodeURIComponent(ownerEmail)}` : "";
+      const response = await fetch(`/api/student-program${query}`);
       const data = await response.json();
       const nextPrograms = Array.isArray(data.programs) ? data.programs : [];
       setPrograms(nextPrograms);
@@ -34,13 +39,13 @@ export function CurriculumSetup({
     }
 
     void loadPrograms();
-  }, [programCode]);
+  }, [ownerEmail, programCode]);
 
   async function save() {
     const response = await fetch("/api/student-program", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ programCode, studentCode, track })
+      body: JSON.stringify({ programCode, studentCode, track, ownerEmail, ownerName })
     });
     const data = await response.json();
     setMessage(data.success ? "บันทึกหลักสูตรแล้ว กำลังโหลดข้อมูลใหม่" : data.error ?? "บันทึกไม่สำเร็จ");
@@ -48,39 +53,39 @@ export function CurriculumSetup({
   }
 
   return (
-    <section className="surface p-4">
-      <h2 className="text-lg font-bold">แก้ข้อมูลหลักสูตรและแผนการเรียน</h2>
-      <p className="mt-1 text-sm text-slate-600">
-        เลือกหลักสูตร รหัสนักศึกษา และแผนการเรียน เพื่อให้ระบบวิเคราะห์ transcript ได้ตรงเงื่อนไข
+    <section className="rounded-xl border border-line bg-white p-4">
+      <h3 className="text-lg font-bold text-ink">ข้อมูลนี้ใช้เป็นฐานของการคำนวณทั้งหมด</h3>
+      <p className="mt-1 text-sm leading-6 text-slate-600">
+        ถ้าเลือกหลักสูตรหรือแผนผิด ระบบอาจบอกวิชาคงเหลือและวันจบผิดตามไปด้วย
       </p>
       <div className="mt-4 grid gap-3 md:grid-cols-4">
-        <label className="text-sm font-semibold">
+        <label className="text-sm font-semibold text-slate-700">
           หลักสูตร
-          <select className="mt-2 w-full rounded-md border border-line px-3 py-2" value={programCode} onChange={(event) => setProgramCode(event.target.value)}>
+          <select className="mt-2 w-full rounded-xl border border-line bg-white px-3 py-2" value={programCode} onChange={(event) => setProgramCode(event.target.value)}>
             {programs.length === 0 ? <option value="">ยังไม่มีหลักสูตรในระบบ</option> : null}
             {programs.map((program) => (
               <option key={program.code} value={program.code}>{program.code} {program.nameTh}</option>
             ))}
           </select>
         </label>
-        <label className="text-sm font-semibold">
+        <label className="text-sm font-semibold text-slate-700">
           รหัสนักศึกษา
-          <input className="mt-2 w-full rounded-md border border-line px-3 py-2" value={studentCode} onChange={(event) => setStudentCode(event.target.value)} placeholder="650710xxx" />
+          <input className="mt-2 w-full rounded-xl border border-line bg-white px-3 py-2" value={studentCode} onChange={(event) => setStudentCode(event.target.value)} placeholder="650710xxx" />
         </label>
-        <label className="text-sm font-semibold">
+        <label className="text-sm font-semibold text-slate-700">
           แผน
-          <select className="mt-2 w-full rounded-md border border-line px-3 py-2" value={track} onChange={(event) => setTrack(event.target.value)}>
+          <select className="mt-2 w-full rounded-xl border border-line bg-white px-3 py-2" value={track} onChange={(event) => setTrack(event.target.value)}>
             <option value="research">โครงงานวิจัย</option>
             <option value="coop">สหกิจศึกษา</option>
           </select>
         </label>
         <div className="flex items-end">
-          <button className="w-full rounded-md bg-teal px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" disabled={!programCode || !studentCode} onClick={save}>
-            บันทึก
+          <button className="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-sm disabled:opacity-60" disabled={!programCode || !studentCode} onClick={save}>
+            บันทึกหลักสูตร
           </button>
         </div>
       </div>
-      {message ? <p className="mt-3 rounded-md border border-line bg-mist p-3 text-sm">{message}</p> : null}
+      {message ? <p className="mt-3 rounded-xl border border-line bg-mist p-3 text-sm leading-6">{message}</p> : null}
     </section>
   );
 }

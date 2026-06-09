@@ -4,6 +4,7 @@ import type {
   Course,
   CourseOffering,
   GradeMapping,
+  PlanTrack,
   PrerequisiteRule,
   Program,
   ProgramCode,
@@ -26,6 +27,18 @@ export type AnalysisData = {
   transcriptSummaries: TranscriptSummary[];
   courseOfferings: CourseOffering[];
   summerOfferings: Set<string>;
+};
+
+export type TranscriptOwnerInput = {
+  ownerEmail?: string | null;
+  ownerName?: string | null;
+};
+
+export type ActorUser = {
+  id: number;
+  email?: string | null;
+  name?: string | null;
+  role: "student" | "admin";
 };
 
 export async function getAnalysisData(userId: number, programCode: ProgramCode): Promise<AnalysisData> {
@@ -118,12 +131,13 @@ export async function getAnalysisData(userId: number, programCode: ProgramCode):
 }
 
 export async function getCurriculumData() {
-  const [programs, courses, structures, prerequisites, studyPlan] = await Promise.all([
+  const [programs, courses, structures, prerequisites, studyPlan, courseOfferings] = await Promise.all([
     prisma.program.findMany(),
     prisma.course.findMany({ include: { program: true } }),
     prisma.programStructure.findMany({ include: { program: true } }),
     prisma.prerequisite.findMany({ include: { course: true, prereqCourse: true } }),
-    prisma.studyPlan.findMany({ include: { program: true, course: true } })
+    prisma.studyPlan.findMany({ include: { program: true, course: true } }),
+    prisma.courseOffering.findMany({ include: { course: true } })
   ]);
 
   return {
@@ -156,6 +170,12 @@ export async function getCurriculumData() {
       courseCode: plan.course?.code,
       placeholder: plan.placeholder ?? undefined,
       credits: plan.credits
+    })),
+    courseOfferings: courseOfferings.map((offering) => ({
+      courseCode: offering.course.code,
+      academicYear: offering.academicYear,
+      semester: offering.semester,
+      isSummer: offering.isSummer
     }))
   };
 }
@@ -211,6 +231,51 @@ export async function upsertStudentProgram(userId: number, input: { programCode:
   return prisma.studentProgram.create({ data });
 }
 
+export async function resolveTranscriptOwner(
+  actor: ActorUser,
+  input: TranscriptOwnerInput = {},
+  options: { createIfMissing?: boolean } = {}
+) {
+  const actorEmail = actor.email?.trim().toLowerCase();
+  const ownerEmail = input.ownerEmail?.trim().toLowerCase();
+  const shouldUseActor = !ownerEmail || ownerEmail === actorEmail;
+
+  if (shouldUseActor) {
+    return {
+      id: actor.id,
+      email: actor.email ?? "",
+      name: actor.name ?? actor.email ?? "Student",
+      role: actor.role
+    };
+  }
+
+  if (actor.role !== "admin") {
+    throw new Error("บัญชีนี้ไม่มีสิทธิ์จัดการ transcript ของนักศึกษาคนอื่น");
+  }
+
+  if (options.createIfMissing) {
+    const user = await upsertUserByEmail(ownerEmail, input.ownerName?.trim() || ownerEmail, "STUDENT" as UserRole);
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role === "ADMIN" ? "admin" as const : "student" as const
+    };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: ownerEmail } });
+  if (!user) {
+    throw new Error("ยังไม่พบแฟ้มข้อมูลของนักศึกษาคนนี้ กรุณาบันทึกหลักสูตรหรืออัปโหลด transcript ก่อน");
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role === "ADMIN" ? "admin" as const : "student" as const
+  };
+}
+
 export async function listCourseOfferings(programCode: ProgramCode, academicYear?: number, semester?: number) {
   const offerings = await prisma.courseOffering.findMany({
     where: {
@@ -254,10 +319,7 @@ export async function createTranscriptUpload(userId: number, fileName: string, w
 
 export async function saveTranscriptPreview(userId: number, fileName: string, courses: TranscriptCourse[], summaries: TranscriptSummary[], uploadId?: number) {
   const upload = uploadId
-    ? await prisma.transcriptUpload.update({
-        where: { id: uploadId },
-        data: { parseStatus: "CONFIRMED", warningText: null }
-      })
+    ? await confirmOwnedTranscriptUpload(userId, uploadId)
     : await prisma.transcriptUpload.create({
         data: {
           userId,
@@ -298,6 +360,21 @@ export async function saveTranscriptPreview(userId: number, fileName: string, co
   ]);
 
   return upload;
+}
+
+async function confirmOwnedTranscriptUpload(userId: number, uploadId: number) {
+  const existing = await prisma.transcriptUpload.findFirst({
+    where: { id: uploadId, userId }
+  });
+
+  if (!existing) {
+    throw new Error("ไม่พบไฟล์อัปโหลดของแฟ้มข้อมูลนี้ หรือไฟล์นี้เป็นของนักศึกษาคนอื่น");
+  }
+
+  return prisma.transcriptUpload.update({
+    where: { id: uploadId },
+    data: { parseStatus: "CONFIRMED", warningText: null }
+  });
 }
 
 export async function saveAnalysisResult(userId: number, riskStatus: RiskStatus, summary: string, recommendations: Recommendation[]) {
@@ -347,6 +424,6 @@ function mapProgram(program: Prisma.ProgramGetPayload<object>): Program {
   };
 }
 
-function mapPlanTrack(track: PrismaPlanTrack) {
+function mapPlanTrack(track: PrismaPlanTrack): PlanTrack {
   return track === "COOP" ? "coop" : "research";
 }

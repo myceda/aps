@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth/api-guard";
-import { createTranscriptUpload } from "@/lib/db/repository";
+import { createTranscriptUpload, resolveTranscriptOwner } from "@/lib/db/repository";
 import type { TranscriptPreview } from "@/lib/types";
 import { parseTranscriptText } from "@/lib/transcript/parser";
 import { sampleTranscriptText } from "@/lib/transcript/sample-text";
@@ -27,9 +27,10 @@ export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
-    const body = (await request.json()) as { text?: string };
+    const body = (await request.json()) as { text?: string; ownerEmail?: string; ownerName?: string };
+    const owner = await resolveTranscriptOwner(auth.user, body, { createIfMissing: true });
     const preview = parseTranscriptText(body.text ?? sampleTranscriptText);
-    const upload = await createTranscriptUpload(auth.user.id, "manual-transcript-text", preview.warnings.join("\n") || null);
+    const upload = await createTranscriptUpload(owner.id, "manual-transcript-text", preview.warnings.join("\n") || null);
     return NextResponse.json<TranscriptPreviewResponse>({
       success: true,
       uploadId: upload.id,
@@ -40,6 +41,11 @@ export async function POST(request: Request) {
 
   const form = await request.formData();
   const file = form.get("file");
+  const owner = await resolveTranscriptOwner(auth.user, {
+    ownerEmail: getFormString(form, "ownerEmail"),
+    ownerName: getFormString(form, "ownerName")
+  }, { createIfMissing: true });
+
   if (!(file instanceof File)) {
     return NextResponse.json({ success: false, error: "file is required" }, { status: 400 });
   }
@@ -49,7 +55,7 @@ export async function POST(request: Request) {
       parseTranscriptText(""),
       "ตอนนี้รองรับ PDF transcript ก่อน ส่วน CSV/Excel จะเพิ่มเป็นช่องทางนำเข้าในขั้นตอนถัดไป"
     );
-    const upload = await createTranscriptUpload(auth.user.id, file.name, preview.warnings.join("\n"));
+    const upload = await createTranscriptUpload(owner.id, file.name, preview.warnings.join("\n"));
     return NextResponse.json<TranscriptPreviewResponse>({
       success: true,
       uploadId: upload.id,
@@ -62,7 +68,7 @@ export async function POST(request: Request) {
     const pdfBytes = Buffer.from(await file.arrayBuffer());
     const text = await extractPdfText(pdfBytes);
     const preview = parseTranscriptText(text);
-    const upload = await createTranscriptUpload(auth.user.id, file.name, preview.warnings.join("\n") || null);
+    const upload = await createTranscriptUpload(owner.id, file.name, preview.warnings.join("\n") || null);
 
     return NextResponse.json<TranscriptPreviewResponse>({
       success: true,
@@ -78,7 +84,7 @@ export async function POST(request: Request) {
       parseTranscriptText(""),
       `ระบบอ่านข้อความจาก PDF ไม่สำเร็จ (${message}) ผู้ใช้ยังสามารถเพิ่มรายวิชาด้วยตนเองก่อนบันทึกได้`
     );
-    const upload = await createTranscriptUpload(auth.user.id, file.name, preview.warnings.join("\n"));
+    const upload = await createTranscriptUpload(owner.id, file.name, preview.warnings.join("\n"));
 
     return NextResponse.json<TranscriptPreviewResponse>({
       success: true,
@@ -100,6 +106,11 @@ function isPdfFile(file: File) {
   return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 }
 
+function getFormString(form: FormData, key: string) {
+  const value = form.get(key);
+  return typeof value === "string" ? value : undefined;
+}
+
 function withWarning(preview: TranscriptPreview, warning: string) {
   return validateTranscriptPreview({
     ...preview,
@@ -118,7 +129,7 @@ function buildIntakeState(preview: TranscriptPreview, method: "pdf-text" | "manu
     };
   }
 
-  if (preview.warnings.length > 0) {
+  if (preview.warnings.length > 0 || preview.courses.some((course) => course.validationSeverity && course.validationSeverity !== "ok")) {
     return {
       method,
       status: "needs_review" as const,

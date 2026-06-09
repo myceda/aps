@@ -2,6 +2,7 @@
 
 export type AdminStepKey =
   | "overview"
+  | "import"
   | "programs"
   | "structures"
   | "courses"
@@ -22,37 +23,43 @@ const menu: Array<{
     detail: "ดูว่าข้อมูลพร้อมให้นักศึกษาใช้งานหรือยัง และนำเข้าข้อมูลจากแม่แบบ"
   },
   {
-    step: "1",
+    step: "2",
+    key: "import",
+    label: "นำเข้าข้อมูล CSV",
+    detail: "นำเข้าข้อมูลตั้งต้นจาก template ก่อนแก้รายละเอียดรายหมวด"
+  },
+  {
+    step: "3",
     key: "programs",
     label: "จัดการหลักสูตร",
     detail: "ชื่อหลักสูตร ปีหลักสูตร หน่วยกิตรวม และเกณฑ์ GPAX"
   },
   {
-    step: "1.1",
+    step: "4",
     key: "structures",
     label: "จัดการโครงสร้างหลักสูตร",
     detail: "หมวดวิชาและหน่วยกิตขั้นต่ำของแต่ละหมวด"
   },
   {
-    step: "2",
+    step: "5",
     key: "courses",
     label: "จัดการรายวิชา",
     detail: "รหัสวิชา ชื่อวิชา หน่วยกิต และหมวดวิชา"
   },
   {
-    step: "3",
+    step: "6",
     key: "prerequisites",
     label: "วิชาบังคับก่อน / วิชาตัวต่อ",
     detail: "กำหนดวิชาที่ต้องผ่านก่อนและวิชาที่เรียนพร้อมกันได้"
   },
   {
-    step: "4",
+    step: "7",
     key: "study-plans",
     label: "แผนผังการเรียนรายเทอม",
     detail: "แผนรายปีและรายเทอมตามหลักสูตร"
   },
   {
-    step: "5",
+    step: "8",
     key: "offerings",
     label: "จัดการวิชาเปิดแต่ละเทอม",
     detail: "กำหนดเทอม 1 เทอม 2 และภาคฤดูร้อน"

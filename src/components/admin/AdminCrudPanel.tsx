@@ -140,7 +140,7 @@ const resourceConfigs: ResourceConfig[] = [
   },
   {
     key: "structures",
-    step: "3.1",
+    step: "4",
     label: "โครงสร้างหลักสูตร",
     title: "จัดการหมวดวิชาและหน่วยกิตขั้นต่ำ",
     goal: "บอกระบบว่าหลักสูตรต้องครบหมวดใดบ้าง",
@@ -161,7 +161,7 @@ const resourceConfigs: ResourceConfig[] = [
   },
   {
     key: "courses",
-    step: "4",
+    step: "5",
     label: "รายวิชา",
     title: "จัดการรายวิชา",
     goal: "สร้างคลังรายวิชาที่ข้อมูลผลการเรียนและแผนเรียนจะนำไปเทียบ",
@@ -188,7 +188,7 @@ const resourceConfigs: ResourceConfig[] = [
   },
   {
     key: "prerequisites",
-    step: "5",
+    step: "6",
     label: "วิชาบังคับก่อน / วิชาตัวต่อ",
     title: "จัดการวิชาบังคับก่อน / วิชาตัวต่อ",
     goal: "บอกระบบว่าวิชาใดต้องผ่านก่อน จึงจะลงวิชาต่อได้",
@@ -209,7 +209,7 @@ const resourceConfigs: ResourceConfig[] = [
   },
   {
     key: "study-plans",
-    step: "6",
+    step: "7",
     label: "แผนผังการเรียนรายเทอม",
     title: "จัดการแผนผังการเรียนรายปี/รายเทอม",
     goal: "วางรายวิชาตามปีและเทอม เพื่อใช้สร้างแผนจบและแผนผัง 8 ปี",
@@ -236,7 +236,7 @@ const resourceConfigs: ResourceConfig[] = [
   },
   {
     key: "offerings",
-    step: "7",
+    step: "8",
     label: "วิชาเปิดแต่ละเทอม",
     title: "จัดการวิชาเปิดแต่ละเทอม",
     goal: "บอกระบบว่าวิชาใดเปิดในเทอมใด เพื่อคาดการณ์วันจบได้ใกล้ความจริง",

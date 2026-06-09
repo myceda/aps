@@ -25,12 +25,19 @@ const workflowSteps: Array<{
     step: "1",
     title: "ตรวจความพร้อมข้อมูล",
     shortTitle: "ตรวจความพร้อม",
-    detail: "เริ่มจากดูว่าข้อมูลพื้นฐานครบหรือยัง แล้วนำเข้า CSV ก่อนแก้รายละเอียดรายหมวด"
+    detail: "เริ่มจากดูว่าข้อมูลพื้นฐานครบหรือยัง ถ้าพบจุดที่ขาดให้ไปนำเข้า CSV หรือแก้ข้อมูลตามลำดับ"
+  },
+  {
+    key: "import",
+    step: "2",
+    title: "นำเข้าข้อมูลด้วย CSV",
+    shortTitle: "Import CSV",
+    detail: "นำเข้าข้อมูลจำนวนมากจาก template ก่อนค่อยแก้รายละเอียดรายหมวด เพื่อลดการกรอกซ้ำและลดข้อมูลตกหล่น"
   },
   {
     key: "programs",
     resource: "programs",
-    step: "2",
+    step: "3",
     title: "จัดการหลักสูตร",
     shortTitle: "หลักสูตร",
     detail: "กำหนดรหัสหลักสูตร ปีหลักสูตร หน่วยกิตรวม และเกณฑ์ GPAX ที่ใช้วิเคราะห์"
@@ -38,7 +45,7 @@ const workflowSteps: Array<{
   {
     key: "structures",
     resource: "structures",
-    step: "3",
+    step: "4",
     title: "จัดการโครงสร้างหลักสูตร",
     shortTitle: "โครงสร้าง",
     detail: "กำหนดหมวดวิชาและหน่วยกิตขั้นต่ำของแต่ละหมวดในหลักสูตร"
@@ -46,7 +53,7 @@ const workflowSteps: Array<{
   {
     key: "courses",
     resource: "courses",
-    step: "4",
+    step: "5",
     title: "จัดการรายวิชา",
     shortTitle: "รายวิชา",
     detail: "เพิ่มหรือแก้ไขรหัสวิชา ชื่อวิชา หน่วยกิต หมวดวิชา และหลักสูตรที่เกี่ยวข้อง"
@@ -54,7 +61,7 @@ const workflowSteps: Array<{
   {
     key: "prerequisites",
     resource: "prerequisites",
-    step: "5",
+    step: "6",
     title: "จัดการวิชาบังคับก่อน",
     shortTitle: "Prerequisite",
     detail: "กำหนดความสัมพันธ์ของรายวิชา เพื่อให้ระบบรู้ว่าวิชาใดปลดล็อกหรือขวางการเรียนต่อ"
@@ -62,7 +69,7 @@ const workflowSteps: Array<{
   {
     key: "study-plans",
     resource: "study-plans",
-    step: "6",
+    step: "7",
     title: "จัดการแผนรายเทอม",
     shortTitle: "Study Plan",
     detail: "วางรายวิชาเป็นปีและเทอม แยกแผน RESEARCH และ COOP เพื่อใช้คาดการณ์วันจบ"
@@ -70,7 +77,7 @@ const workflowSteps: Array<{
   {
     key: "offerings",
     resource: "offerings",
-    step: "7",
+    step: "8",
     title: "จัดการวิชาที่เปิดสอน",
     shortTitle: "วิชาเปิดสอน",
     detail: "ระบุว่าวิชาใดเปิดในเทอม 1 เทอม 2 หรือภาคฤดูร้อนของแต่ละปีการศึกษา"
@@ -150,10 +157,23 @@ export function AdminDashboardShell({ importPanel, readinessPanel }: AdminDashbo
       {activeStep === "overview" ? (
         <div className="grid gap-5">
           <TranscriptCasePanel />
-          <div className="grid gap-5 xl:grid-cols-[1fr_0.95fr]">
-            {readinessPanel}
-            {importPanel}
-          </div>
+          {readinessPanel}
+          <NextWorkflowAction
+            detail="ถ้าผลตรวจยังไม่พร้อม ให้เริ่มจากนำเข้า CSV template ก่อน แล้วค่อยแก้รายละเอียดรายหมวด"
+            label="ไป Step 2: Import CSV"
+            onClick={() => setActiveStep("import")}
+          />
+        </div>
+      ) : null}
+
+      {activeStep === "import" ? (
+        <div className="grid gap-5">
+          {importPanel}
+          <NextWorkflowAction
+            detail="เมื่อนำเข้าข้อมูลตั้งต้นแล้ว ให้ตรวจหรือแก้หลักสูตรก่อน เพราะเป็นฐานของรายวิชาและแผนเรียนทั้งหมด"
+            label="ไป Step 3: จัดการหลักสูตร"
+            onClick={() => setActiveStep("programs")}
+          />
         </div>
       ) : null}
 
@@ -161,6 +181,21 @@ export function AdminDashboardShell({ importPanel, readinessPanel }: AdminDashbo
         <AdminCrudPanel activeResource={activeWorkflowStep.resource} showResourceTabs={false} />
       ) : null}
     </AcademicAppShell>
+  );
+}
+
+function NextWorkflowAction({ detail, label, onClick }: { detail: string; label: string; onClick: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[#b7ddd8] bg-[#effaf8] p-4">
+      <p className="text-sm font-semibold leading-6 text-slate-700">{detail}</p>
+      <button
+        className="rounded-md bg-[#007a64] px-4 py-3 text-sm font-extrabold text-white shadow-sm hover:bg-[#006653]"
+        onClick={onClick}
+        type="button"
+      >
+        {label}
+      </button>
+    </div>
   );
 }
 

@@ -10,6 +10,7 @@
 ## Scope ปัจจุบัน
 
 - Student Dashboard สำหรับ summary, progress, risk, readiness, graduation forecast, 8-year study plan และ what-if simulation
+- What-if simulation ทำงานแบบ temporary state เพื่อเปรียบเทียบผลกระทบก่อนตัดสินใจ โดยไม่บันทึกทับข้อมูลผลการเรียนจริงและยังไม่บันทึก SimulationSession ถาวรในเวอร์ชัน final demo
 - Transcript tools สำหรับ preview/validation ข้อมูลผลการเรียนก่อนยืนยัน
 - Admin Control Panel สำหรับตรวจความพร้อมของข้อมูลและจัดการข้อมูลหลักสูตรผ่าน UI
 - CSV import สำหรับข้อมูลหลักสูตรและข้อมูลประกอบการวิเคราะห์

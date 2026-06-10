@@ -51,14 +51,14 @@ export function AdminPublishPanel() {
       const payload = (await response.json()) as PublishPayload;
 
       if (!payload.success || !payload.status) {
-        setMessage(payload.error ?? "ตรวจสถานะ publish ไม่สำเร็จ");
+        setMessage(payload.error ?? "ตรวจความพร้อมก่อนเผยแพร่ไม่สำเร็จ");
         setStatus(null);
         return;
       }
 
       setStatus(payload.status);
     } catch {
-      setMessage("เชื่อมต่อระบบตรวจ publish ไม่ได้");
+      setMessage("เชื่อมต่อระบบตรวจความพร้อมก่อนเผยแพร่ไม่ได้");
       setStatus(null);
     } finally {
       setIsLoading(false);
@@ -76,10 +76,10 @@ export function AdminPublishPanel() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[#007a64]">ขั้นตอนที่ 8</p>
-          <h2 className="mt-1 text-xl font-bold text-ink">Publish ข้อมูลให้นักศึกษาใช้</h2>
+          <h2 className="mt-1 text-xl font-bold text-ink">ตรวจความพร้อมก่อนเผยแพร่</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
             ขั้นนี้เป็น gate สุดท้ายก่อนใช้ข้อมูลกับ Student Dashboard, Graduation Forecast และ What-if Simulation
-            ระบบจะบอกว่าอะไรครบแล้ว อะไรยังขาด และอะไรต้องแก้ก่อน publish
+            ระบบจะบอกว่าอะไรครบแล้ว อะไรยังขาด และอะไรต้องแก้ก่อนให้นักศึกษาใช้วิเคราะห์
           </p>
         </div>
         <button
@@ -100,7 +100,7 @@ export function AdminPublishPanel() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className={`text-sm font-extrabold ${status.readyToPublish ? "text-emerald-700" : "text-amber-800"}`}>
-                  {status.readyToPublish ? "พร้อม publish" : "ยังไม่พร้อม publish"}
+                  {status.readyToPublish ? "พร้อมให้นักศึกษาใช้วิเคราะห์" : "ยังไม่พร้อมให้นักศึกษาใช้วิเคราะห์"}
                 </p>
                 <h3 className="mt-1 text-2xl font-extrabold text-ink">
                   {status.readyToPublish
@@ -113,7 +113,7 @@ export function AdminPublishPanel() {
               </span>
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-700">
-              หมายเหตุ: ปุ่ม publish จริงควรถูกเพิ่มเมื่อมี requirement เรื่อง versioning/approval แล้ว ตอนนี้ APS ใช้ผลตรวจนี้เป็น gate ว่าข้อมูลพร้อมให้นักศึกษาใช้หรือยัง
+              หมายเหตุ: ขั้นตอนนี้เป็นการตรวจความพร้อม ไม่ใช่การสร้างเวอร์ชันข้อมูลหรืออนุมัติเผยแพร่ถาวร ระบบใช้ผลตรวจนี้เป็น gate ว่าข้อมูลพร้อมให้นักศึกษาใช้วิเคราะห์หรือยัง
             </p>
           </div>
 

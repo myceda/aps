@@ -20,7 +20,7 @@ export async function AdminCompletenessPanel() {
           <p className="text-sm font-semibold text-[#007a64]">ขั้นตอนที่ 1</p>
           <h2 className="mt-1 text-xl font-bold text-ink">ตรวจความพร้อม Curriculum Master Data</h2>
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            ใช้ตรวจข้อมูลก่อน publish ให้นักศึกษาใช้งานจริง ถ้าข้อมูลหลักสูตรไม่พร้อม ผลวิเคราะห์ transcript,
+            ใช้ตรวจข้อมูลก่อนเผยแพร่ให้นักศึกษาใช้วิเคราะห์ ถ้าข้อมูลหลักสูตรไม่พร้อม ผลวิเคราะห์ transcript,
             graduation forecast และ what-if จะเชื่อถือไม่ได้
           </p>
         </div>
@@ -31,7 +31,7 @@ export async function AdminCompletenessPanel() {
               : "border-amber-300 bg-amber-50 text-amber-700"
           }`}
         >
-          {status.readyToPublish ? "พร้อม publish" : "ยังไม่พร้อม publish"}
+          {status.readyToPublish ? "พร้อมให้นักศึกษาใช้วิเคราะห์" : "ยังไม่พร้อมให้นักศึกษาใช้วิเคราะห์"}
         </span>
       </div>
 
@@ -46,7 +46,7 @@ export async function AdminCompletenessPanel() {
 
       <div className="mt-4 grid gap-3">
         <div className="rounded-md border border-line bg-white p-4">
-          <p className="font-bold text-ink">Checklist ที่ระบบตรวจให้ก่อน publish</p>
+          <p className="font-bold text-ink">Checklist ที่ระบบตรวจให้ก่อนเผยแพร่</p>
           <div className="mt-3 grid gap-2">
             {checklistDescriptions.map((item) => (
               <p className="rounded-md bg-mist px-3 py-2 text-sm text-slate-700" key={item}>
@@ -99,7 +99,7 @@ export async function AdminCompletenessPanel() {
           }`}
         >
           <p className={`font-bold ${failedChecks.length > 0 ? "text-amber-800" : "text-emerald-700"}`}>
-            {failedChecks.length > 0 ? `พบ ${status.issues.length} จุดที่ต้องแก้ก่อน publish` : "ไม่พบปัญหาหลัก พร้อม publish"}
+            {failedChecks.length > 0 ? `พบ ${status.issues.length} จุดที่ต้องแก้ก่อนเผยแพร่` : "ไม่พบปัญหาหลัก พร้อมให้นักศึกษาใช้วิเคราะห์"}
           </p>
           <p className="mt-1 text-sm leading-6 text-slate-700">
             เมื่อรายการนี้ผ่านทั้งหมด นักศึกษาจึงควรใช้ผลวิเคราะห์จาก APS เพื่อประกอบการวางแผนเรียน

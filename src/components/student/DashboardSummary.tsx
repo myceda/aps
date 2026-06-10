@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { Badge } from "@/components/shared/Badge";
-import { ProgressBar } from "@/components/shared/ProgressBar";
-import { StatCard } from "@/components/shared/StatCard";
-import type { AnalysisResult, RiskStatus } from "@/lib/types";
+import type { AnalysisResult } from "@/lib/types";
 
 type DashboardSummaryProps = {
   analysis: AnalysisResult;
@@ -17,7 +15,6 @@ export function DashboardSummary({ analysis, onOpenRoadmap, onOpenSimulator, tra
   const trackRequirement = analysis.trackRequirement;
   const isLowProbation = proStatus.level === "low_probation" || analysis.gpax < 2;
   const pendingScenario = buildPendingScenario(analysis);
-  const answerCards = buildHumanAnswerCards(analysis);
 
   return (
     <section className="grid gap-4">
@@ -37,30 +34,7 @@ export function DashboardSummary({ analysis, onOpenRoadmap, onOpenSimulator, tra
       ) : null}
 
       <div className="grid gap-4 rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-[#007a64]">Academic Eligibility จาก APS</p>
-            <h3 className="mt-1 text-xl font-extrabold text-slate-900">{academicEligibility.label}</h3>
-            <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-700">{academicEligibility.detail}</p>
-          </div>
-          <Badge status={academicEligibility.tone}>{formatAcademicEligibilityBadge(analysis)}</Badge>
-        </div>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {answerCards.map((card) => (
-            <div className={`rounded-md border bg-white p-4 shadow-sm ${getAnswerCardToneClass(card.tone)}`} key={card.label}>
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{card.label}</p>
-              <p className="mt-2 text-xl font-extrabold text-slate-950">{card.value}</p>
-              <p className="mt-2 text-xs leading-5 text-slate-600">{card.detail}</p>
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-4 rounded-md border border-[#b7ddd8] bg-white px-3 py-2 text-xs font-semibold leading-5 text-slate-600">
-          สถานะ REG ไม่ได้คำนวณจากระบบ APS แต่เป็นข้อมูลจากการยื่นจบกับกองบริหารงานวิชาการ
-        </p>
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 p-4">
           <div>
             <p className="font-extrabold text-amber-900">เริ่มจากตรวจข้อมูลผลการเรียนก่อน</p>
             <p className="mt-1 text-sm leading-6 text-amber-800">
@@ -73,6 +47,21 @@ export function DashboardSummary({ analysis, onOpenRoadmap, onOpenSimulator, tra
           >
             จัดการข้อมูลผลการเรียน
           </Link>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
+          <div className="rounded-md border border-[#b7ddd8] bg-[#effaf8] p-3">
+            <p className="text-xs font-bold text-[#007a64]">สถานะทางวิชาการจาก APS</p>
+            <p className="mt-1 font-extrabold text-slate-900">{formatAcademicStatus(analysis)}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">{academicEligibility.detail}</p>
+          </div>
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs font-bold text-slate-500">สถานะ REG</p>
+            <p className="mt-1 font-extrabold text-slate-900">{analysis.regGraduationStatus.label}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">
+              สถานะ REG ไม่ได้คำนวณจาก APS แต่เป็นข้อมูลจากการยื่นจบกับกองบริหารงานวิชาการ
+            </p>
+          </div>
         </div>
 
         {academicEligibility.pendingCourseCodes.length > 0 ? (
@@ -99,43 +88,6 @@ export function DashboardSummary({ analysis, onOpenRoadmap, onOpenSimulator, tra
               {course.courseCode}: {formatCourseStatus(course.status)}
             </span>
           ))}
-        </div>
-      </div>
-
-      <div className="surface p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-sky-700">ภาพรวมผลการเรียน</p>
-            <h2 className="mt-1 text-xl font-bold text-ink">ตอนนี้สถานะการเรียนเป็นอย่างไร</h2>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-              ส่วนนี้สรุปข้อมูลที่ต้องเช็กก่อนวางแผนต่อ: เกรดเฉลี่ย หน่วยกิต และความคืบหน้าตามหลักสูตร
-            </p>
-          </div>
-          <Badge status={proStatus.tone}>{proStatus.label}</Badge>
-        </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="GPAX ปัจจุบัน" value={analysis.gpax.toFixed(2)} detail="คะแนนเฉลี่ยสะสมจากข้อมูลที่ยืนยันแล้ว" />
-          <StatCard label="GPA เทอมล่าสุด" value={analysis.latestGpa.toFixed(2)} detail="ใช้ดูแนวโน้มผลการเรียนล่าสุด" />
-          <StatCard label="หน่วยกิตผ่านแล้ว" value={analysis.earnedCredits} detail={`จากขั้นต่ำ ${analysis.totalCreditsMin} หน่วยกิต`} />
-          <StatCard label="หน่วยกิตที่ยังขาด" value={analysis.missingCredits} detail="ยังต้องเก็บให้ครบตามหลักสูตร" />
-        </div>
-
-        <div className="mt-5 rounded-md border border-sky-100 bg-sky-50 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-bold text-sky-800">แถบหน่วยกิตสะสม</p>
-              <p className="mt-1 text-sm text-slate-600">
-                ยิ่งแถบนี้ใกล้เต็ม แปลว่าหน่วยกิตที่ผ่านแล้วใกล้ครบตามเกณฑ์ขั้นต่ำของหลักสูตร
-              </p>
-            </div>
-            <p className="text-lg font-extrabold text-sky-700">
-              {analysis.earnedCredits}/{analysis.totalCreditsMin} หน่วยกิต
-            </p>
-          </div>
-          <div className="mt-4">
-            <ProgressBar value={analysis.earnedCredits} max={analysis.totalCreditsMin} />
-          </div>
         </div>
       </div>
 
@@ -311,35 +263,6 @@ function WhatIfEntry({ onOpenSimulator }: { onOpenSimulator: () => void }) {
   );
 }
 
-function buildHumanAnswerCards(analysis: AnalysisResult) {
-  return [
-    {
-      label: "สถานะทางวิชาการ",
-      value: formatAcademicStatus(analysis),
-      detail: analysis.academicEligibility.detail,
-      tone: analysis.academicEligibility.tone
-    },
-    {
-      label: "สายที่ใช้ตรวจ",
-      value: analysis.trackRequirement.track === "coop" ? "Coop" : "Research",
-      detail: analysis.trackRequirement.detail,
-      tone: getTrackTone(analysis)
-    },
-    {
-      label: "คาดการณ์เทอมจบ",
-      value: formatForecastTerm(analysis.academicEligibility.expectedAcademicYear, analysis.academicEligibility.expectedSemester),
-      detail: analysis.graduationForecast.conditionLabel ?? "ระบบยังไม่มีข้อมูลพอสำหรับคาดการณ์เทอมจบ",
-      tone: analysis.graduationForecast.canGraduate ? "normal" : "watch"
-    },
-    {
-      label: "สถานะ REG",
-      value: analysis.regGraduationStatus.label,
-      detail: analysis.regGraduationStatus.detail,
-      tone: formatRegTone(analysis.regGraduationStatus.status)
-    }
-  ] satisfies { label: string; value: string; detail: string; tone: RiskStatus }[];
-}
-
 function buildPendingScenario(analysis: AnalysisResult) {
   const pendingCodes = analysis.trackRequirement.pendingCourseCodes;
   if (pendingCodes.length === 0) return null;
@@ -364,10 +287,6 @@ function formatAcademicStatus(analysis: AnalysisResult) {
   return "ยังขาดวิชา";
 }
 
-function formatAcademicEligibilityBadge(analysis: AnalysisResult) {
-  return formatAcademicStatus(analysis);
-}
-
 function hasPrerequisiteBlock(analysis: AnalysisResult) {
   return analysis.courseDependencies.some((dependency) => dependency.isBlocking) || analysis.graduationForecast.blockedCourses.length > 0;
 }
@@ -376,24 +295,6 @@ function formatForecastTerm(academicYear?: number, semester?: number) {
   if (!academicYear || !semester) return "ยังคาดการณ์ไม่ได้";
   if (semester === 3) return `เทอม 3/${academicYear}`;
   return `เทอม ${semester}/${academicYear}`;
-}
-
-function getTrackTone(analysis: AnalysisResult): RiskStatus {
-  if (analysis.trackRequirement.state === "passed") return "normal";
-  if (analysis.trackRequirement.state === "pending") return "watch";
-  return "urgent";
-}
-
-function formatRegTone(status: AnalysisResult["regGraduationStatus"]["status"]): RiskStatus {
-  if (status === "approved") return "normal";
-  if (status === "applied") return "watch";
-  return "watch";
-}
-
-function getAnswerCardToneClass(tone: RiskStatus) {
-  if (tone === "urgent") return "border-red-200";
-  if (tone === "watch") return "border-amber-200";
-  return "border-[#b7ddd8]";
 }
 
 function formatCourseStatus(status: AnalysisResult["trackRequirement"]["requiredCourses"][number]["status"]) {

@@ -136,14 +136,23 @@ export function StudentDashboardShell({ analysis, programCode, userName, userEma
             <span className="text-slate-300">/</span>
             <span className="text-slate-400">{activeMeta.label}</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-700">{activeMeta.title}</h1>
+          <h1 className="text-3xl font-extrabold text-slate-700">Dashboard นักศึกษา</h1>
         </div>
-        <Link
-          className="rounded-md bg-[#f59e0b] px-5 py-3 text-center text-sm font-extrabold text-white shadow-sm hover:bg-[#d98706]"
-          href={transcriptToolsHref}
-        >
-          อัปโหลด / แก้ผลการเรียน
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            className="rounded-md bg-[#f59e0b] px-5 py-3 text-center text-sm font-extrabold text-white shadow-sm hover:bg-[#d98706]"
+            href={transcriptToolsHref}
+          >
+            จัดการผลการเรียน
+          </Link>
+          <button
+            className="rounded-md border border-[#007a64] bg-white px-5 py-3 text-sm font-extrabold text-[#007a64] shadow-sm hover:bg-[#effaf8]"
+            onClick={() => setActiveView("simulator")}
+            type="button"
+          >
+            จำลองสถานการณ์
+          </button>
+        </div>
       </div>
 
       <section className="overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-slate-200">
@@ -154,8 +163,8 @@ export function StudentDashboardShell({ analysis, programCode, userName, userEma
               <span className="text-sm font-semibold text-slate-500">ข้อมูลสรุปล่าสุดจาก transcript ที่ยืนยันแล้ว</span>
             </div>
             <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-              หน้านี้ตอบคำถามหลักของนักศึกษา: ตอนนี้เสี่ยงไหม เหลือกี่หน่วยกิต คาดว่าจะจบเมื่อไร
-              และถ้าถอนหรือลงเพิ่มจะกระทบอย่างไร
+              หน้านี้สรุปสถานะทางวิชาการ GPAX/GPA ล่าสุด หน่วยกิตที่ผ่านและยังขาด คาดการณ์เทอมจบ
+              พร้อมปุ่มไปจัดการผลการเรียนหรือจำลองสถานการณ์ทันที
             </p>
           </div>
           <div className="rounded-md border border-[#b7ddd8] bg-[#effaf8] px-4 py-3 text-sm font-bold text-[#007a64]">
@@ -165,7 +174,7 @@ export function StudentDashboardShell({ analysis, programCode, userName, userEma
 
         <div className="grid divide-y divide-slate-200 bg-white sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
           <OverviewMetric
-            label="แนวโน้มจบ"
+            label="สถานะทางวิชาการ"
             value={analysis.academicEligibility.label}
             detail={analysis.academicEligibility.detail}
           />
@@ -175,7 +184,7 @@ export function StudentDashboardShell({ analysis, programCode, userName, userEma
         </div>
       </section>
 
-      <SectionHeading title={activeMeta.title} detail={activeMeta.detail} />
+      {activeView !== "summary" ? <SectionHeading title={activeMeta.title} detail={activeMeta.detail} /> : null}
 
       {activeView === "summary" ? (
         <DashboardSummary

@@ -87,9 +87,41 @@ const workflowSteps: Array<{
 ];
 
 const transcriptCases = [
-  { name: "แฟ้มของบัญชีนี้", email: "current account", program: "CS2565", status: "ใช้งานอยู่" },
-  { name: "ตัวอย่าง CS", email: "friend_cs@silpakorn.edu", program: "CS2565", status: "แยกแฟ้มได้" },
-  { name: "ตัวอย่าง IT", email: "friend_it@silpakorn.edu", program: "IT2565", status: "ไม่ปนกับ CS" }
+  {
+    name: "IT_Sand",
+    email: "it_sand.case@silpakorn.edu",
+    program: "IT2565",
+    track: "Research",
+    status: "อนุมัติปริญญา เทอม 2/2568"
+  },
+  {
+    name: "CS_F",
+    email: "cs_f.case@silpakorn.edu",
+    program: "CS2565",
+    track: "Research",
+    status: "ยื่นจบ รอ 517494 เทอม 3/2568"
+  },
+  {
+    name: "CS_Neoi",
+    email: "cs_neoi.case@silpakorn.edu",
+    program: "CS2565",
+    track: "Coop",
+    status: "ยื่นจบ รอเกรด I ของ 517497"
+  },
+  {
+    name: "CS_Minie",
+    email: "cs_minie.case@silpakorn.edu",
+    program: "CS2565",
+    track: "Coop",
+    status: "ยื่นจบ รอเกรด I ของ 517497"
+  },
+  {
+    name: "CS_Moss",
+    email: "cs_moss.case@silpakorn.edu",
+    program: "CS2565",
+    track: "Research",
+    status: "ยังไม่พร้อมจบ ขาดวิชาปกติ"
+  }
 ];
 
 export function AdminDashboardShell({ importPanel, readinessPanel }: AdminDashboardShellProps) {
@@ -235,29 +267,25 @@ function TranscriptCasePanel() {
     <section className="overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-slate-200">
       <div className="grid gap-4 border-b border-slate-200 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
-          <p className="text-sm font-bold text-[#007a64]">แฟ้ม transcript หลายคน</p>
-          <h2 className="mt-1 text-xl font-extrabold text-slate-800">หนึ่งบัญชีจัดการหลายแฟ้มได้ แต่ต้องแยกเจ้าของข้อมูลชัดเจน</h2>
+          <p className="text-sm font-bold text-[#007a64]">แฟ้ม transcript ตัวอย่างสำหรับทดสอบ</p>
+          <h2 className="mt-1 text-xl font-extrabold text-slate-800">Golden cases สำหรับตรวจว่า APS แยกหลักสูตรและสายการเรียนถูกต้อง</h2>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-            ถ้าเพื่อนฝาก transcript ให้บัญชีเดียวอัปโหลด ควรเปิดแฟ้มด้วยอีเมลเจ้าของ transcript ทุกครั้ง
-            เพื่อไม่ให้หลักสูตร CS2565 และ IT2565 ปนกันในผลวิเคราะห์
+            ข้อมูลชุดนี้เป็น fixture สำหรับทดสอบเคสจริงก่อนนำเสนอ ไม่ใช่ข้อมูลเล่น ๆ ระบบต้องใช้ ownerEmail ของแต่ละแฟ้มเพื่อไม่ให้
+            CS2565, IT2565, Research และ Coop ปนกันในผลวิเคราะห์
           </p>
         </div>
-        <Link
-          className="rounded-md bg-[#f59e0b] px-5 py-3 text-center text-sm font-extrabold text-white shadow-sm hover:bg-[#d98706]"
-          href="/student/transcript-tools"
-        >
-          เปิดหน้าจัดการ transcript
-        </Link>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-sm">
+        <table className="w-full min-w-[920px] text-left text-sm">
           <thead className="bg-[#365f9d] text-white">
             <tr>
               <th className="px-5 py-3">ชื่อแฟ้ม</th>
               <th className="px-5 py-3">อีเมลเจ้าของ transcript</th>
               <th className="px-5 py-3">หลักสูตร</th>
+              <th className="px-5 py-3">สายที่ใช้ตรวจ</th>
               <th className="px-5 py-3">สถานะ</th>
+              <th className="px-5 py-3 text-right">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
@@ -266,10 +294,19 @@ function TranscriptCasePanel() {
                 <td className="px-5 py-4 font-bold text-slate-800">{item.name}</td>
                 <td className="px-5 py-4 text-slate-600">{item.email}</td>
                 <td className="px-5 py-4 text-slate-600">{item.program}</td>
+                <td className="px-5 py-4 text-slate-600">{item.track}</td>
                 <td className="px-5 py-4">
                   <span className="rounded-full border border-[#b7ddd8] bg-[#effaf8] px-3 py-1 text-xs font-bold text-[#007a64]">
                     {item.status}
                   </span>
+                </td>
+                <td className="px-5 py-4 text-right">
+                  <Link
+                    className="inline-flex rounded-md bg-[#f59e0b] px-3 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#d98706]"
+                    href={`/student/transcript-tools?ownerEmail=${encodeURIComponent(item.email)}&ownerName=${encodeURIComponent(item.name)}`}
+                  >
+                    เปิดแฟ้มนี้
+                  </Link>
                 </td>
               </tr>
             ))}

@@ -57,10 +57,9 @@ export default async function StudentTranscriptToolsPage({ searchParams }: Stude
     <AcademicAppShell
       navItems={[
         { href: dashboardHref, label: "หน้าแรกนักศึกษา" },
-        { label: "จัดการผลการเรียน", isActive: true },
-        { href: "/admin", label: "ผู้ดูแลระบบ" }
+        { label: "จัดการผลการเรียน", isActive: true }
       ]}
-      roleLabel={user.role === "admin" ? "ผู้ดูแลระบบ" : "นักศึกษา"}
+      roleLabel="นักศึกษา"
       sidebar={sidebar}
       userEmail={owner.email}
       userName={owner.name}

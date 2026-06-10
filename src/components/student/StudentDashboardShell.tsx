@@ -122,8 +122,7 @@ export function StudentDashboardShell({ analysis, programCode, userName, userEma
     <AcademicAppShell
       navItems={[
         { href: "/student", label: "หน้าแรกนักศึกษา", isActive: true },
-        { href: transcriptToolsHref, label: "จัดการผลการเรียน" },
-        { href: "/admin", label: "ผู้ดูแลระบบ" }
+        { href: transcriptToolsHref, label: "จัดการผลการเรียน" }
       ]}
       roleLabel="นักศึกษา"
       sidebar={sidebar}

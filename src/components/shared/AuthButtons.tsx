@@ -38,13 +38,15 @@ export function AuthButtons() {
           {dashboardLabel}
         </Link>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Link
-            className="rounded-lg border border-[#007a64] bg-white px-4 py-3 text-center text-sm font-bold text-[#007a64] transition hover:bg-emerald-50"
-            href="/student/transcript-tools"
-          >
-            จัดการ Transcript
-          </Link>
+        <div className={`grid gap-3 ${isAdmin ? "" : "sm:grid-cols-2"}`}>
+          {!isAdmin ? (
+            <Link
+              className="rounded-lg border border-[#007a64] bg-white px-4 py-3 text-center text-sm font-bold text-[#007a64] transition hover:bg-emerald-50"
+              href="/student/transcript-tools"
+            >
+              จัดการ Transcript
+            </Link>
+          ) : null}
           <button
             className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
             onClick={() => signOut({ callbackUrl: "/" })}

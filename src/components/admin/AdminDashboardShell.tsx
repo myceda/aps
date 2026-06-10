@@ -137,9 +137,9 @@ export function AdminDashboardShell({ importPanel, readinessPanel }: AdminDashbo
   return (
     <AcademicAppShell
       navItems={[
-        { label: "ตั้งค่าข้อมูลระบบ", isActive: true },
-        { href: "/student", label: "มุมมองนักศึกษา" },
-        { href: "/student/transcript-tools", label: "จัดการ transcript" }
+        { label: "ตรวจความพร้อมข้อมูล", isActive: activeStep === "overview" },
+        { label: "Import CSV", isActive: activeStep === "import" },
+        { label: "จัดการข้อมูลหลักสูตร", isActive: activeStep !== "overview" && activeStep !== "import" }
       ]}
       roleLabel="ผู้ดูแลระบบ"
       sidebar={sidebar}

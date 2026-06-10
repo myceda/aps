@@ -39,12 +39,7 @@ export function AcademicAppShell({
           </div>
 
           <div className="flex items-center gap-3 text-sm font-bold">
-            <button className="rounded-md bg-white/10 px-3 py-2 text-white md:hidden" type="button">
-              เมนู
-            </button>
             <span className="hidden rounded-full bg-white/10 px-3 py-1 md:inline-flex">TH</span>
-            <span className="hidden rounded-full border border-white/50 px-3 py-1 md:inline-flex">แจ้งเตือน 2</span>
-            <span className="hidden rounded-full border border-white/50 px-3 py-1 md:inline-flex">โหมดสว่าง</span>
             <div className="hidden border-l border-white/30 pl-4 text-right md:block">
               <p>{userName || "ผู้ใช้งาน"}</p>
               <p className="text-xs font-semibold text-white/75">{roleLabel}</p>

@@ -36,7 +36,6 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-4 text-sm font-bold">
             <span className="hidden rounded-full bg-white/10 px-3 py-1 sm:inline-flex">TH</span>
-            <span className="hidden text-sm sm:inline">Dark</span>
             <a className="rounded-lg bg-white px-4 py-2 text-[#007a64]" href="#login">
               เข้าสู่ระบบ
             </a>
@@ -49,12 +48,9 @@ export default function HomePage() {
           <div className="text-5xl font-extrabold tracking-normal text-[#007a64]">
             APS<span className="text-[#f5c400]">.</span>SU
           </div>
-          <div className="hidden items-center gap-8 text-base font-bold text-slate-500 md:flex">
-            <span className="border-b-2 border-[#f5c400] py-1 text-[#007a64]">หน้าแรก</span>
-            <span>ผลการวิเคราะห์</span>
-            <span>Transcript Tools</span>
-            <span>Admin Setup</span>
-          </div>
+          <span className="hidden border-b-2 border-[#f5c400] py-1 text-base font-bold text-[#007a64] md:inline-flex">
+            หน้าแรก
+          </span>
         </div>
       </nav>
 

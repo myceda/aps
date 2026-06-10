@@ -3,7 +3,6 @@ import { requireApiUser } from "@/lib/auth/api-guard";
 import { createTranscriptUpload, resolveTranscriptOwner } from "@/lib/db/repository";
 import type { TranscriptPreview } from "@/lib/types";
 import { parseTranscriptText } from "@/lib/transcript/parser";
-import { sampleTranscriptText } from "@/lib/transcript/sample-text";
 import { validateTranscriptPreview } from "@/lib/transcript/validator";
 
 export const runtime = "nodejs";
@@ -29,7 +28,7 @@ export async function POST(request: Request) {
   if (contentType.includes("application/json")) {
     const body = (await request.json()) as { text?: string; ownerEmail?: string; ownerName?: string };
     const owner = await resolveTranscriptOwner(auth.user, body, { createIfMissing: true });
-    const preview = parseTranscriptText(body.text ?? sampleTranscriptText);
+    const preview = parseTranscriptText(body.text ?? "");
     const upload = await createTranscriptUpload(owner.id, "manual-transcript-text", preview.warnings.join("\n") || null);
     return NextResponse.json<TranscriptPreviewResponse>({
       success: true,
